@@ -1,38 +1,41 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
-import { type Env } from '@/infra/env/env';
+import type { Env } from '@/infra/env/env';
 
 @Injectable()
 export class EnvService {
-  constructor(private readonly configService: ConfigService<Env, true>) {}
+  constructor(
+    @Inject(ConfigService)
+    private readonly configService: ConfigService<Env, true>,
+  ) {}
 
   get nodeEnv(): Env['NODE_ENV'] {
-    return this.configService.get('NODE_ENV', { infer: true })!;
+    return this.configService.getOrThrow('NODE_ENV', { infer: true });
   }
 
   get port(): number {
-    return this.configService.get('PORT', { infer: true })!;
+    return this.configService.getOrThrow('PORT', { infer: true });
   }
 
   get databaseUrl(): string {
-    return this.configService.get('DATABASE_URL', { infer: true })!;
+    return this.configService.getOrThrow('DATABASE_URL', { infer: true });
   }
 
   get redisHost(): string {
-    return this.configService.get('REDIS_HOST', { infer: true })!;
+    return this.configService.getOrThrow('REDIS_HOST', { infer: true });
   }
 
   get redisPort(): number {
-    return this.configService.get('REDIS_PORT', { infer: true })!;
+    return this.configService.getOrThrow('REDIS_PORT', { infer: true });
   }
 
   get redisDb(): number {
-    return this.configService.get('REDIS_DB', { infer: true })!;
+    return this.configService.getOrThrow('REDIS_DB', { infer: true });
   }
 
   get workspaceRoot(): string {
-    return this.configService.get('WORKSPACE_ROOT', { infer: true })!;
+    return this.configService.getOrThrow('WORKSPACE_ROOT', { infer: true });
   }
 
   get jwtPrivateKey(): string | undefined {
@@ -43,4 +46,3 @@ export class EnvService {
     return this.configService.get('JWT_PUBLIC_KEY');
   }
 }
-

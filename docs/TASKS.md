@@ -12,10 +12,10 @@
   - `forum-blueprint.md`
   - Most relevant sections: Tech Stack, Repository Structure, Architectural Style, Dependency Injection, Testing Strategy, Configuration and Environment, CI/CD and Quality Gates
 - Existing repository areas:
-  - Current repo is greenfield and contains only planning artifacts plus `forum-blueprint.md`
-  - No `PROJECT.md` exists yet
+  - Bootstrap infrastructure, env validation, and the health endpoint are implemented
+  - `PROJECT.md` exists and is the stable project handbook
   - No `docs/GLOSSARY.md` exists yet
-  - No source files, tests, scripts, or package manifests exist yet
+  - Domain, persistence, and auth implementation have not started yet
 
 ## 2. Implementation Goal
 
@@ -54,6 +54,8 @@ Create the first working version of AI Backend Factory as a forum-inspired NestJ
 ## 5. Task Breakdown
 
 ## T1 — Bootstrap The Factory Service Skeleton
+
+Status: done
 
 Objective:
 Create the greenfield project foundation for the Factory Service using the blueprint-aligned stack and repository shape.
@@ -95,6 +97,8 @@ Completion signal:
 - The repo can install, boot, answer a health request, and run lint, unit, and e2e commands through documented scripts.
 
 ## T2 — Model Factory Domains And Persistence
+
+Status: ready
 
 Objective:
 Define the domain and persistence model for accounts, Generation Jobs, and notifications.

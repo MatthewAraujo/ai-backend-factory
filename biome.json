@@ -1,12 +1,7 @@
 {
   "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
   "files": {
-    "ignore": [
-      "dist",
-      "coverage",
-      "node_modules",
-      "repos"
-    ]
+    "ignore": ["dist", "coverage", "node_modules", "repos"]
   },
   "formatter": {
     "enabled": true,
@@ -20,6 +15,9 @@
     "enabled": true
   },
   "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    },
     "formatter": {
       "quoteStyle": "single",
       "semicolons": "always",
@@ -27,4 +25,3 @@
     }
   }
 }
-

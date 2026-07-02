@@ -63,3 +63,8 @@ _Avoid_: AI-first generation, freeform code synthesis, prompt-only scaffolding
 **One-shot Generation**:
 The v1 execution model where a Generation Job can be created and tracked but not cancelled or retried through the API.
 _Avoid_: workflow control, retryable orchestration, cancellable runs
+
+## Implementation Discoveries
+
+- Bootstrap environments may leave `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY` blank before T3. The env parser should normalize blank values to `undefined` so the service can boot before authentication is implemented.
+- Nest constructor injection in the Vitest runtime should use explicit `@Inject(...)` parameter decorators for providers used in e2e tests. This avoids relying on constructor metadata that the test transform may not preserve consistently.

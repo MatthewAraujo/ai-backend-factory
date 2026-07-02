@@ -1,4 +1,4 @@
-import { type INestApplication } from '@nestjs/common';
+import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import request from 'supertest';
 
@@ -17,7 +17,7 @@ describe('HealthController (e2e)', () => {
   });
 
   afterAll(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('returns the service health payload', async () => {
@@ -32,4 +32,3 @@ describe('HealthController (e2e)', () => {
     expect(response.body.timestamp).toEqual(expect.any(String));
   });
 });
-

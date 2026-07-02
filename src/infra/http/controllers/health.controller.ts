@@ -1,10 +1,10 @@
-import { Controller, Get } from '@nestjs/common';
-
 import { EnvService } from '@/infra/env/env.service';
+import { Inject } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 
 @Controller('health')
 export class HealthController {
-  constructor(private readonly envService: EnvService) {}
+  constructor(@Inject(EnvService) private readonly envService: EnvService) {}
 
   @Get()
   check() {
@@ -16,4 +16,3 @@ export class HealthController {
     };
   }
 }
-

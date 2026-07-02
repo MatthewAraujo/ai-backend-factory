@@ -17,4 +17,3 @@ import { HttpModule } from '@/infra/http/http.module';
   ],
 })
 export class AppModule {}
-

@@ -9,6 +9,7 @@ The repository is currently at the project-foundation stage. The implemented run
 ## Tech Stack
 
 - Node.js 22+
+- `mise`-managed `pnpm` 9
 - TypeScript
 - NestJS 11
 - Prisma with PostgreSQL
@@ -36,6 +37,7 @@ CONTEXT.md            Evolving project memory
 ## Core Commands
 
 ```bash
+mise install
 cp .env.example .env
 cp .env.example .env.test
 docker compose up -d postgres redis
@@ -87,5 +89,5 @@ CI is defined in `.github/workflows/ci.yml`.
 
 - Follow the workflow in the repository instructions: planning artifacts first, then task-by-task `tdd`.
 - Use `forum-blueprint.md` as the architecture reference for layering, DI, testing style, and operations.
+- Run `mise install` before `pnpm ...` commands on a new machine so the pinned toolchain from `mise.toml` is available.
 - Keep generated services inside `repos/` and out of version control except for `repos/.gitkeep`.
-
