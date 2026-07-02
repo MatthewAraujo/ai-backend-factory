@@ -1,0 +1,78 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: ai_backend_factory_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d ai_backend_factory_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: test
+      PORT: 3333
+      DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/ai_backend_factory_test
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+      REDIS_DB: 1
+      WORKSPACE_ROOT: ${{ github.workspace }}/repos
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Generate Prisma client
+        run: pnpm prisma:generate
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Build
+        run: pnpm build
+
+      - name: Unit tests
+        run: pnpm test
+
+      - name: E2E tests
+        run: pnpm test:e2e
+

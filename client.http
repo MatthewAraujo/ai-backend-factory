@@ -1,0 +1,6 @@
+@baseUrl = http://localhost:3333
+
+### Health
+GET {{baseUrl}}/health
+Accept: application/json
+
