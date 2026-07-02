@@ -2,9 +2,9 @@
 
 ## Overview
 
-AI Backend Factory is a backend-only NestJS service that will accept structured generation requests and produce deterministic, blueprint-aligned backend foundations under the local workspace root at `/home/matthew/personal/ai-backend-factory/repos`.
+AI Backend Factory is a backend-only NestJS service that accepts structured generation requests and produces deterministic, blueprint-aligned backend foundations under the local workspace root at `/home/matthew/personal/ai-backend-factory/repos`.
 
-The repository is currently at the project-foundation stage. The implemented runtime surface now includes bootstrap infrastructure, environment validation, a health endpoint, domain models for accounts, Generation Jobs, and notifications, plus Prisma-backed persistence adapters for those aggregates.
+The repository is currently at the project-foundation stage. The implemented runtime surface now includes bootstrap infrastructure, environment validation, health and authentication endpoints, domain models for accounts, Generation Jobs, and notifications, plus Prisma-backed persistence adapters for those aggregates.
 
 ## Tech Stack
 
@@ -63,10 +63,10 @@ Current bootstrap variables:
 - `REDIS_PORT`
 - `REDIS_DB`
 - `WORKSPACE_ROOT`
-
-Reserved for the upcoming auth module:
 - `JWT_PRIVATE_KEY`
 - `JWT_PUBLIC_KEY`
+
+When the JWT variables are blank, the local auth flow falls back to an internal development/test secret so bootstrap and e2e auth coverage keep working before production key management is in place.
 
 Secrets must stay in local environment files or external secret stores and must not be committed.
 

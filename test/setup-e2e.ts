@@ -14,4 +14,6 @@ process.env.REDIS_HOST ??= '127.0.0.1';
 process.env.REDIS_PORT ??= '6379';
 process.env.REDIS_DB ??= '1';
 process.env.WORKSPACE_ROOT ??= path.resolve(process.cwd(), 'repos');
+process.env.JWT_PRIVATE_KEY ??= 'ai-backend-factory-test-secret';
+process.env.JWT_PUBLIC_KEY ??= 'ai-backend-factory-test-secret';
 process.env.NODE_ENV = 'test';

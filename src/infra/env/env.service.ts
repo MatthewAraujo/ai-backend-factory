@@ -45,4 +45,12 @@ export class EnvService {
   get jwtPublicKey(): string | undefined {
     return this.configService.get('JWT_PUBLIC_KEY');
   }
+
+  get jwtAccessTokenSecret(): string {
+    return (
+      this.jwtPrivateKey ??
+      this.jwtPublicKey ??
+      'ai-backend-factory-local-jwt-secret'
+    );
+  }
 }

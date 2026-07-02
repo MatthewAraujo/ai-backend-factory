@@ -203,7 +203,7 @@ Completion signal:
 
 ## T3 — Implement Authentication And Protected Access
 
-Status: ready
+Status: done
 
 Objective:
 Implement account registration, login, JWT issuance, and shared ownership-aware request access.
