@@ -66,6 +66,12 @@ _Avoid_: workflow control, retryable orchestration, cancellable runs
 
 ## Implementation Discoveries
 
+- The Factory bounded context owns both account and Generation Job domain/application code. The `notification` context remains separate because it models user-facing lifecycle messages rather than Factory Authentication or job execution state directly.
+- The Factory Service and the Generated Service baseline should share the same DDD-lite core contract: `Entity`, `AggregateRoot`, `UniqueEntityID`, `ValueObject`, and in-process domain-event support in `src/core`.
+- `Either` belongs at the application/use-case boundary, not inside entities or value objects. Domain objects should keep direct factory/update APIs and raise typed domain errors for invariant violations.
+- Application-layer request DTOs, repository lookup methods, Prisma adapters, and HTTP presenters should continue to exchange plain string ids at the boundary. Conversion to and from `UniqueEntityID` belongs inside domain objects and mappers.
+- Controllers should translate `UseCaseError` results explicitly with a shared mapper to Nest HTTP exceptions rather than hiding the mapping behind a generic wrapper early.
+
 - Bootstrap environments may leave `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY` blank before T3. The env parser should normalize blank values to `undefined` so the service can boot before authentication is implemented.
 - Nest constructor injection in the Vitest runtime should use explicit `@Inject(...)` parameter decorators for providers used in e2e tests. This avoids relying on constructor metadata that the test transform may not preserve consistently.
 - Prisma repository adapters are intentionally typed against the small delegate surface they use. This keeps adapter contract tests fast with a fake Prisma client while preserving the Prisma-backed persistence boundary for later tasks.

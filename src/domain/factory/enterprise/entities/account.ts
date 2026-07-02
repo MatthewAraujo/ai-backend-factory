@@ -7,7 +7,7 @@ import type { Optional } from '@/core/types/optional';
 import {
   InvalidAccountEmailError,
   MissingAccountPasswordHashError,
-} from '@/domain/account/enterprise/errors/account-errors';
+} from '@/domain/factory/enterprise/errors/account-errors';
 
 type AccountProps = {
   createdAt: Date;

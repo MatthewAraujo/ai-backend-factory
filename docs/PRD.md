@@ -30,13 +30,18 @@ Build AI Backend Factory as a REST-only Factory Service that follows the same fo
 20. As a maintainer, I want the Factory Service and Generated Services to share the same architectural style, so that the factory can dogfood the same conventions it produces.
 21. As a maintainer, I want the HTTP API and generation worker to run in one application process in v1, so that local setup and deployment stay simple.
 22. As a maintainer, I want the factory to avoid retry and cancellation behavior in v1, so that the first release can keep the Generation State model small and stable.
+23. As a maintainer, I want account and Generation Job code grouped under one Factory bounded context, so that the domain structure follows the module boundary instead of fragmenting by entity.
 
 ## Implementation Decisions
 
 - The Factory Service is a NestJS-based modular monolith that mirrors the domain, application, infrastructure, and test separation described by the Blueprint.
+- The `factory` bounded context owns account and Generation Job code, while `notification` remains a separate bounded context.
 - Generated Services use the same forum-inspired architectural style as the Factory Service rather than a different internal shape.
+- The Factory Service and Generated Services share the same DDD-lite core primitives: `Entity`, `AggregateRoot`, `UniqueEntityID`, `ValueObject`, and in-process domain-event support.
 - The v1 Factory API is REST-only. No web UI is part of this repository in the first release.
 - Factory Authentication follows self-registration, email and password login, and JWT-protected routes.
+- Application use cases return `Either<UseCaseError, Result>` and controllers translate `UseCaseError` values to HTTP responses explicitly through a shared mapper.
+- Domain entities and value objects keep direct creation and mutation APIs, enforce invariants with typed domain errors, and do not depend on `Either` or HTTP-facing error contracts.
 - The Factory API surface for v1 is limited to account registration, session login, create generation job, list own jobs, get one job, list notifications, and mark one notification as read.
 - Generation is asynchronous and represented by Generation Jobs with the v1 state set `PENDING`, `RUNNING`, `SUCCEEDED`, and `FAILED`.
 - The HTTP API and background generation worker live in the same deployable NestJS application process in v1.
@@ -65,13 +70,17 @@ Build AI Backend Factory as a REST-only Factory Service that follows the same fo
 10. An authenticated Factory User can list their own notifications and mark one notification as read.
 11. V1 generation is deterministic, local, and does not call an LLM or create remote repositories.
 12. V1 does not expose retry or cancellation behavior for Generation Jobs.
+13. The repository groups account and Generation Job domain/application code under the Factory bounded context without changing runtime behavior, persistence shape, or public API contracts.
 
 ## Testing Decisions
 
 - Good tests verify external behavior and observable outcomes rather than implementation details such as private methods, internal class composition, or template helper internals.
 - The primary seams are the authenticated REST API, the generation orchestration flow, and the deterministic filesystem generator.
 - Unit tests should cover pure decision logic such as Generation State transitions, request validation rules, name collision handling, ownership rules, and generation planning logic.
+- Unit tests should also cover core entity/id primitives, typed domain invariant errors, aggregate event collection, and use-case `Either` result handling.
 - Integration tests should cover use cases that cross boundaries, especially account registration and login, job creation and retrieval, notification creation and read flows, and persistence-backed orchestration.
+- Repository mapping tests should verify that domain ids stay as `UniqueEntityID` inside aggregates while Prisma records and application lookup methods continue using strings at the boundary.
+- Structural refactor tests should verify that the moved Factory module code still passes the same domain and repository behavior checks after import paths are updated.
 - Filesystem-oriented integration tests should verify that successful generation creates the expected local project structure, initializes Git, and writes baseline configuration and documentation files under the Workspace Root.
 - End-to-end API tests should verify the public contract for the v1 endpoints using authenticated requests and realistic persistence wiring.
 - Since the repository is greenfield, the prior art is the Blueprint approach: thin controllers, use-case-driven application logic, infrastructure adapters behind ports, unit tests around use cases, and controller-level end-to-end tests with real application wiring.
@@ -102,4 +111,5 @@ Build AI Backend Factory as a REST-only Factory Service that follows the same fo
 
 - Future phases may add domain-specific generation on top of the Generic Foundation instead of replacing the v1 deterministic baseline.
 - Future enhancements may include duplicate-name suffixing, external notification channels, multi-process workers, remote repository provisioning, and LLM-assisted generation steps.
+- The generated template baseline should include the same core domain primitives and use-case error boundary conventions adopted by the Factory Service.
 - `forum-blueprint.md` remains the primary engineering guide for both the Factory Service and the Generated Service architecture.

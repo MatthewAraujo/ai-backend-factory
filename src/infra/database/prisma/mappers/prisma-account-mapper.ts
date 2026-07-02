@@ -1,6 +1,6 @@
 import type { Account as PrismaAccount } from '@prisma/client';
 
-import { Account } from '@/domain/account/enterprise/entities/account';
+import { Account } from '@/domain/factory/enterprise/entities/account';
 
 export function toDomainAccount(raw: PrismaAccount): Account {
   return Account.create(

@@ -42,18 +42,19 @@ Create the first working version of AI Backend Factory as a forum-inspired NestJ
 
 | Acceptance Criterion | Task(s) | Test(s) | Status |
 | --- | --- | --- | --- |
-| AC-1 Authenticated registration and login via JWT | T1, T2, T2A, T3 | unit, e2e | planned |
+| AC-1 Authenticated registration and login via JWT | T1, T2, T2A, T2B, T3 | unit, e2e | planned |
 | AC-2 Authenticated job creation with `projectName`, `projectDescription`, `notes` | T2, T2A, T4 | unit, e2e | planned |
 | AC-3 Persisted owner-backed jobs with `PENDING`, `RUNNING`, `SUCCEEDED`, `FAILED` | T2, T2A, T4, T7 | unit, integration | planned |
 | AC-4 Users can list and fetch only their own jobs | T3, T4 | unit, e2e | planned |
 | AC-5 Successful jobs create a local generated project and initialize Git | T6, T7 | integration | planned |
 | AC-6 Jobs fail when target folder already exists | T7 | unit, integration | planned |
 | AC-7 Generated service contains the agreed Generic Foundation | T1, T2A, T6, T7, T8 | integration, manual smoke | planned |
-| AC-8 Factory Service follows the forum-inspired modular monolith style | T1, T2, T2A, T3, T4, T5, T7 | architecture review, unit, e2e | planned |
+| AC-8 Factory Service follows the forum-inspired modular monolith style | T1, T2, T2A, T2B, T3, T4, T5, T7 | architecture review, unit, e2e | planned |
 | AC-9 In-app notifications are stored for job completion or failure | T2, T2A, T5, T7 | unit, integration, e2e | planned |
 | AC-10 Users can list notifications and mark one as read | T3, T5 | unit, e2e | planned |
 | AC-11 Generation is deterministic, local, and does not call an LLM or create remote repos | T6, T7, T8 | integration, code review | planned |
 | AC-12 No retry or cancellation API is exposed | T4, T7, T8 | e2e, route surface check | planned |
+| AC-13 Factory-owned account and Generation Job code live under one bounded context | T2B | unit, integration | planned |
 
 ## 5. Task Breakdown
 
@@ -110,7 +111,6 @@ Define the domain and persistence model for accounts, Generation Jobs, and notif
 Affected files / areas:
 - `prisma/schema.prisma`
 - `prisma/migrations/**`
-- `src/domain/account/**`
 - `src/domain/factory/**`
 - `src/domain/notification/**`
 - `src/infra/database/**`
@@ -145,7 +145,6 @@ Affected files / areas:
 - `src/core/errors/**`
 - `src/core/either.ts`
 - `src/core/types/**`
-- `src/domain/account/enterprise/**`
 - `src/domain/factory/enterprise/**`
 - `src/domain/notification/enterprise/**`
 - `src/infra/database/prisma/mappers/**`
@@ -169,6 +168,39 @@ Dependencies:
 Completion signal:
 - Current aggregates use the shared core primitives, persistence adapters preserve behavior across the new id boundary, and the repo contains the `Either`/`UseCaseError` foundation needed for T3 use cases.
 
+## T2B — Consolidate Factory Domain Module Structure
+
+Status: done
+
+Objective:
+Refactor the domain folder layout so account and Generation Job code live under the `factory` bounded context while preserving all existing runtime behavior, persistence contracts, and public API plans.
+
+Affected files / areas:
+- `src/domain/factory/**`
+- `src/domain/account/**` to be moved or removed
+- `src/infra/database/**`
+- `test/factories/**`
+- `src/**/*.spec.ts`
+- `PROJECT.md`
+- `CONTEXT.md`
+
+Test-first plan:
+- Move or update the existing domain and repository unit tests so they fail first against stale import paths.
+- Re-run the current account, Generation Job, and Prisma repository tests to prove the structural refactor preserves behavior.
+- Run typecheck and lint to catch missed import-path or module-boundary regressions.
+
+Implementation notes:
+- Keep the `factory` module as the single bounded context for Factory Authentication and Generation Job concepts.
+- Keep `notification` as a separate bounded context.
+- Preserve existing class names, repository interfaces, domain behavior, and Prisma mappings unless a path change requires otherwise.
+- Do not change runtime behavior, HTTP contracts, Prisma schema, or env setup in this task.
+
+Dependencies:
+- T2A
+
+Completion signal:
+- Account and Generation Job code live under `src/domain/factory/**`, imports are updated, old `src/domain/account/**` paths are removed, and the current unit/repository validation still passes without behavior changes.
+
 ## T3 — Implement Authentication And Protected Access
 
 Status: ready
@@ -177,8 +209,8 @@ Objective:
 Implement account registration, login, JWT issuance, and shared ownership-aware request access.
 
 Affected files / areas:
-- `src/domain/account/application/use-cases/**`
-- `src/domain/account/application/cryptography/**`
+- `src/domain/factory/application/use-cases/**`
+- `src/domain/factory/application/cryptography/**`
 - `src/infra/auth/**`
 - `src/infra/cryptography/**`
 - `src/infra/http/controllers/register*`
@@ -197,7 +229,7 @@ Implementation notes:
 - Make protected-route ownership checks easy to reuse in later job and notification controllers.
 
 Dependencies:
-- T1, T2, T2A
+- T1, T2, T2A, T2B
 
 Completion signal:
 - Users can register and log in through the API, and protected routes can reliably resolve the authenticated Factory User.
@@ -355,6 +387,7 @@ Completion signal:
 
 - Unit tests:
   - Core entity/id primitives, aggregate event collection, and typed domain invariant errors
+  - Domain-module structure regressions for account and Generation Job imports
   - Account registration and authentication use cases
   - Generation Job creation rules, state handling, ownership checks, and duplicate-path decisions
   - Notification listing and read behavior
@@ -407,6 +440,9 @@ Completion signal:
 - Architecture drift across factory and generated services:
   - Risk: the Factory Service adopts core modeling patterns that the generated baseline does not, creating blueprint drift.
   - Mitigation: encode the shared core primitives and `Either` boundary in both the ADR and T6 template requirements before template generation starts.
+- Domain layout drift:
+  - Risk: per-entity folders outside the Factory bounded context reappear and make later application-layer work harder to navigate.
+  - Mitigation: move account and Generation Job code under `src/domain/factory/**` before T3 and keep the task plan and project docs aligned with that boundary.
 - CI flakiness:
   - Risk: Prisma, Redis, and filesystem-based tests become slow or inconsistent.
   - Mitigation: keep unit tests dominant, scope e2e coverage to the public contract, and isolate workspace directories per test run.
@@ -416,12 +452,13 @@ Completion signal:
 1. T1 to establish the factory scaffold, test harness, env handling, and health baseline.
 2. T2 to lock the domain and persistence model before controller work begins.
 3. T2A to install the shared domain core and `Either` foundation before new use cases and controllers are written.
-4. T3 to establish account access and reusable protected-route behavior.
-5. T4 to expose job creation and job reads with owner scoping.
-6. T5 to expose notification reads and prepare event-driven notification handling.
-7. T6 to build the deterministic generated-service template pack independently of async execution.
-8. T7 to wire the in-process worker, filesystem generation, Git initialization, state transitions, and terminal events together.
-9. T8 to tighten CI, docs, and generated-output verification after the core behavior works.
+4. T2B to align the Factory bounded context folder layout before new application use cases and controllers depend on those paths.
+5. T3 to establish account access and reusable protected-route behavior.
+6. T4 to expose job creation and job reads with owner scoping.
+7. T5 to expose notification reads and prepare event-driven notification handling.
+8. T6 to build the deterministic generated-service template pack independently of async execution.
+9. T7 to wire the in-process worker, filesystem generation, Git initialization, state transitions, and terminal events together.
+10. T8 to tighten CI, docs, and generated-output verification after the core behavior works.
 
 ## 9. Open Questions
 
@@ -435,4 +472,4 @@ Planning assumptions:
 
 Ready for `tdd`.
 
-Start with T2A and write the failing core primitive and aggregate refactor tests described in the test-first plan.
+Start with T3 and write the failing registration and authentication tests described in the test-first plan.

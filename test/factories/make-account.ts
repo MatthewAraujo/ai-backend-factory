@@ -1,4 +1,4 @@
-import { Account } from '@/domain/account/enterprise/entities/account';
+import { Account } from '@/domain/factory/enterprise/entities/account';
 
 type MakeAccountOverrides = Partial<{
   createdAt: Date;

@@ -1,9 +1,9 @@
 import { UniqueEntityID } from '@/core/entities/unique-entity-id';
-import { Account } from '@/domain/account/enterprise/entities/account';
+import { Account } from '@/domain/factory/enterprise/entities/account';
 import {
   InvalidAccountEmailError,
   MissingAccountPasswordHashError,
-} from '@/domain/account/enterprise/errors/account-errors';
+} from '@/domain/factory/enterprise/errors/account-errors';
 
 describe('Account', () => {
   it('normalizes the email address on creation', () => {

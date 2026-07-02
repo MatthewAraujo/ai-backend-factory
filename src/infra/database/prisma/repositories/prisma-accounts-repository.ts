@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import type { Account as PrismaAccount } from '@prisma/client';
 
-import type { AccountsRepository } from '@/domain/account/application/repositories/accounts-repository';
-import type { Account } from '@/domain/account/enterprise/entities/account';
+import type { AccountsRepository } from '@/domain/factory/application/repositories/accounts-repository';
+import type { Account } from '@/domain/factory/enterprise/entities/account';
 import {
   toDomainAccount,
   toPrismaAccount,

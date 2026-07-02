@@ -27,7 +27,8 @@ docs/                 Planning artifacts, ADRs, and requirements
 prisma/               Prisma schema and future migrations
 repos/                Generated-service workspace root
 src/core/             Shared low-level primitives
-src/domain/           Bounded contexts for account, factory, notification
+src/domain/factory/   Factory bounded context for account and generation-job code
+src/domain/notification/ Notification bounded context
 src/infra/database/   Prisma service, mappers, and repository adapters
 src/infra/            Nest bootstrap, env, HTTP, and infrastructure adapters
 test/                 Shared test helpers, factories, fakes, and setup
