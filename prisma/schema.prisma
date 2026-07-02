@@ -7,3 +7,64 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum GenerationJobState {
+  PENDING
+  RUNNING
+  SUCCEEDED
+  FAILED
+}
+
+enum NotificationType {
+  GENERATION_SUCCEEDED
+  GENERATION_FAILED
+}
+
+model Account {
+  id             String          @id
+  email          String          @unique
+  passwordHash   String          @map("password_hash")
+  createdAt      DateTime        @default(now()) @map("created_at")
+  updatedAt      DateTime        @default(now()) @updatedAt @map("updated_at")
+  generationJobs GenerationJob[]
+  notifications  Notification[]
+
+  @@map("accounts")
+}
+
+model GenerationJob {
+  id                 String             @id
+  ownerId            String             @map("owner_id")
+  owner              Account            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  projectName        String             @map("project_name")
+  projectDescription String             @map("project_description")
+  notes              String
+  state              GenerationJobState @default(PENDING)
+  outputPath         String?            @map("output_path")
+  failureReason      String?            @map("failure_reason")
+  startedAt          DateTime?          @map("started_at")
+  completedAt        DateTime?          @map("completed_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @default(now()) @updatedAt @map("updated_at")
+  notifications      Notification[]
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@index([state])
+  @@map("generation_jobs")
+}
+
+model Notification {
+  id              String           @id
+  ownerId         String           @map("owner_id")
+  owner           Account          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  generationJobId String?          @map("generation_job_id")
+  generationJob   GenerationJob?   @relation(fields: [generationJobId], references: [id], onDelete: SetNull)
+  type            NotificationType
+  title           String
+  content         String
+  readAt          DateTime?        @map("read_at")
+  createdAt       DateTime         @default(now()) @map("created_at")
+  updatedAt       DateTime         @default(now()) @updatedAt @map("updated_at")
+
+  @@index([ownerId, createdAt(sort: Desc)])
+  @@map("notifications")
+}

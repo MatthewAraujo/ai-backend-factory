@@ -98,7 +98,7 @@ Completion signal:
 
 ## T2 — Model Factory Domains And Persistence
 
-Status: ready
+Status: done
 
 Objective:
 Define the domain and persistence model for accounts, Generation Jobs, and notifications.
@@ -129,6 +129,8 @@ Completion signal:
 - Prisma schema, domain entities, repository ports, and Prisma adapters exist for the three core aggregates and support the read patterns required by the PRD.
 
 ## T3 — Implement Authentication And Protected Access
+
+Status: ready
 
 Objective:
 Implement account registration, login, JWT issuance, and shared ownership-aware request access.

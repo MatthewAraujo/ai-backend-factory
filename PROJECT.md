@@ -4,7 +4,7 @@
 
 AI Backend Factory is a backend-only NestJS service that will accept structured generation requests and produce deterministic, blueprint-aligned backend foundations under the local workspace root at `/home/matthew/personal/ai-backend-factory/repos`.
 
-The repository is currently at the project-foundation stage. The implemented runtime surface is limited to bootstrap infrastructure, environment validation, and a health endpoint.
+The repository is currently at the project-foundation stage. The implemented runtime surface now includes bootstrap infrastructure, environment validation, a health endpoint, domain models for accounts, Generation Jobs, and notifications, plus Prisma-backed persistence adapters for those aggregates.
 
 ## Tech Stack
 
@@ -28,6 +28,7 @@ prisma/               Prisma schema and future migrations
 repos/                Generated-service workspace root
 src/core/             Shared low-level primitives
 src/domain/           Bounded contexts for account, factory, notification
+src/infra/database/   Prisma service, mappers, and repository adapters
 src/infra/            Nest bootstrap, env, HTTP, and infrastructure adapters
 test/                 Shared test helpers, factories, fakes, and setup
 forum-blueprint.md    Primary architecture reference

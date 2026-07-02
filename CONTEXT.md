@@ -68,3 +68,4 @@ _Avoid_: workflow control, retryable orchestration, cancellable runs
 
 - Bootstrap environments may leave `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY` blank before T3. The env parser should normalize blank values to `undefined` so the service can boot before authentication is implemented.
 - Nest constructor injection in the Vitest runtime should use explicit `@Inject(...)` parameter decorators for providers used in e2e tests. This avoids relying on constructor metadata that the test transform may not preserve consistently.
+- Prisma repository adapters are intentionally typed against the small delegate surface they use. This keeps adapter contract tests fast with a fake Prisma client while preserving the Prisma-backed persistence boundary for later tasks.
