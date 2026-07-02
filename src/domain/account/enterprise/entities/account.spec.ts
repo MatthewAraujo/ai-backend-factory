@@ -1,4 +1,9 @@
+import { UniqueEntityID } from '@/core/entities/unique-entity-id';
 import { Account } from '@/domain/account/enterprise/entities/account';
+import {
+  InvalidAccountEmailError,
+  MissingAccountPasswordHashError,
+} from '@/domain/account/enterprise/errors/account-errors';
 
 describe('Account', () => {
   it('normalizes the email address on creation', () => {
@@ -8,6 +13,7 @@ describe('Account', () => {
     });
 
     expect(account.email).toBe('factory.user@example.com');
+    expect(account.id).toBeInstanceOf(UniqueEntityID);
   });
 
   it('rejects invalid email addresses', () => {
@@ -16,7 +22,7 @@ describe('Account', () => {
         email: 'invalid-email',
         passwordHash: 'hashed-password',
       }),
-    ).toThrowError('Account email must be valid.');
+    ).toThrowError(InvalidAccountEmailError);
   });
 
   it('requires a non-empty password hash', () => {
@@ -25,6 +31,6 @@ describe('Account', () => {
         email: 'factory.user@example.com',
         passwordHash: '   ',
       }),
-    ).toThrowError('Account password hash is required.');
+    ).toThrowError(MissingAccountPasswordHashError);
   });
 });

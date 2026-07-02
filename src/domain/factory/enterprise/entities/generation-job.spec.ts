@@ -1,7 +1,12 @@
+import { UniqueEntityID } from '@/core/entities/unique-entity-id';
 import {
   GenerationJob,
   GenerationJobState,
 } from '@/domain/factory/enterprise/entities/generation-job';
+import {
+  InvalidGenerationJobFailureTransitionError,
+  MissingGenerationJobOwnerError,
+} from '@/domain/factory/enterprise/errors/generation-job-errors';
 
 describe('GenerationJob', () => {
   it('starts pending and preserves the submitted request metadata', () => {
@@ -12,7 +17,9 @@ describe('GenerationJob', () => {
       notes: 'Include audit logging later',
     });
 
-    expect(job.ownerId).toBe('owner-1');
+    expect(job.id).toBeInstanceOf(UniqueEntityID);
+    expect(job.ownerId).toBeInstanceOf(UniqueEntityID);
+    expect(job.ownerId.toString()).toBe('owner-1');
     expect(job.projectName).toBe('Factory CRM');
     expect(job.projectDescription).toBe('A deterministic CRM starter');
     expect(job.notes).toBe('Include audit logging later');
@@ -62,6 +69,17 @@ describe('GenerationJob', () => {
 
     expect(() =>
       job.fail('Target project folder already exists.'),
-    ).toThrowError('Only running jobs can fail.');
+    ).toThrowError(InvalidGenerationJobFailureTransitionError);
+  });
+
+  it('requires a non-empty owner id', () => {
+    expect(() =>
+      GenerationJob.create({
+        ownerId: '   ',
+        projectName: 'Factory CRM',
+        projectDescription: 'A deterministic CRM starter',
+        notes: 'Include audit logging later',
+      }),
+    ).toThrowError(MissingGenerationJobOwnerError);
   });
 });

@@ -1,44 +1,57 @@
-import { randomUUID } from 'node:crypto';
+import { AggregateRoot } from '@/core/entities/aggregate-root';
+import {
+  type UniqueEntityIDLike,
+  resolveUniqueEntityID,
+} from '@/core/entities/unique-entity-id';
+import type { Optional } from '@/core/types/optional';
+import {
+  InvalidAccountEmailError,
+  MissingAccountPasswordHashError,
+} from '@/domain/account/enterprise/errors/account-errors';
 
 type AccountProps = {
+  createdAt: Date;
   email: string;
   passwordHash: string;
-  createdAt?: Date;
-  id?: string;
-  updatedAt?: Date;
+  updatedAt: Date;
 };
+
+type CreateAccountProps = Optional<AccountProps, 'createdAt' | 'updatedAt'>;
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export class Account {
-  private constructor(private readonly props: Required<AccountProps>) {}
+export class Account extends AggregateRoot<AccountProps> {
+  private constructor(
+    props: AccountProps,
+    id?: ReturnType<typeof resolveUniqueEntityID>,
+  ) {
+    super(props, id);
+  }
 
-  static create(props: AccountProps): Account {
+  static create(props: CreateAccountProps, id?: UniqueEntityIDLike): Account {
     const email = props.email.trim().toLowerCase();
 
     if (!EMAIL_PATTERN.test(email)) {
-      throw new Error('Account email must be valid.');
+      throw new InvalidAccountEmailError();
     }
 
     const passwordHash = props.passwordHash.trim();
 
     if (passwordHash.length === 0) {
-      throw new Error('Account password hash is required.');
+      throw new MissingAccountPasswordHashError();
     }
 
     const createdAt = props.createdAt ?? new Date();
 
-    return new Account({
-      id: props.id ?? randomUUID(),
-      email,
-      passwordHash,
-      createdAt,
-      updatedAt: props.updatedAt ?? createdAt,
-    });
-  }
-
-  get id(): string {
-    return this.props.id;
+    return new Account(
+      {
+        email,
+        passwordHash,
+        createdAt,
+        updatedAt: props.updatedAt ?? createdAt,
+      },
+      resolveUniqueEntityID(id),
+    );
   }
 
   get email(): string {

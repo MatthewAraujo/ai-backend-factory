@@ -1,4 +1,20 @@
-import { randomUUID } from 'node:crypto';
+import { AggregateRoot } from '@/core/entities/aggregate-root';
+import {
+  type UniqueEntityID,
+  type UniqueEntityIDLike,
+  resolveUniqueEntityID,
+} from '@/core/entities/unique-entity-id';
+import type { Optional } from '@/core/types/optional';
+import {
+  InvalidGenerationJobFailureTransitionError,
+  InvalidGenerationJobStartTransitionError,
+  InvalidGenerationJobSuccessTransitionError,
+  MissingGenerationJobFailureReasonError,
+  MissingGenerationJobOutputPathError,
+  MissingGenerationJobOwnerError,
+  MissingGenerationJobProjectDescriptionError,
+  MissingGenerationJobProjectNameError,
+} from '@/domain/factory/enterprise/errors/generation-job-errors';
 
 export enum GenerationJobState {
   PENDING = 'PENDING',
@@ -8,62 +24,101 @@ export enum GenerationJobState {
 }
 
 type GenerationJobProps = {
-  completedAt?: Date | null;
-  createdAt?: Date;
-  failureReason?: string | null;
-  id?: string;
+  completedAt: Date | null;
+  createdAt: Date;
+  failureReason: string | null;
   notes: string;
-  outputPath?: string | null;
-  ownerId: string;
+  outputPath: string | null;
+  ownerId: UniqueEntityID;
   projectDescription: string;
   projectName: string;
-  startedAt?: Date | null;
-  state?: GenerationJobState;
-  updatedAt?: Date;
+  startedAt: Date | null;
+  state: GenerationJobState;
+  updatedAt: Date;
 };
 
-export class GenerationJob {
-  private constructor(private props: Required<GenerationJobProps>) {}
+type CreateGenerationJobProps = Optional<
+  {
+    completedAt?: Date | null;
+    createdAt?: Date;
+    failureReason?: string | null;
+    notes: string;
+    outputPath?: string | null;
+    ownerId: UniqueEntityIDLike;
+    projectDescription: string;
+    projectName: string;
+    startedAt?: Date | null;
+    state?: GenerationJobState;
+    updatedAt?: Date;
+  },
+  | 'completedAt'
+  | 'createdAt'
+  | 'failureReason'
+  | 'outputPath'
+  | 'startedAt'
+  | 'state'
+  | 'updatedAt'
+>;
 
-  static create(props: GenerationJobProps): GenerationJob {
+export class GenerationJob extends AggregateRoot<GenerationJobProps> {
+  private constructor(props: GenerationJobProps, id?: UniqueEntityID) {
+    super(props, id);
+  }
+
+  static create(
+    props: CreateGenerationJobProps,
+    id?: UniqueEntityIDLike,
+  ): GenerationJob {
     const projectName = props.projectName.trim();
     const projectDescription = props.projectDescription.trim();
     const notes = props.notes.trim();
-    const ownerId = props.ownerId.trim();
+    const normalizedOwnerId =
+      typeof props.ownerId === 'string' ? props.ownerId.trim() : props.ownerId;
 
-    if (ownerId.length === 0) {
-      throw new Error('Generation job owner is required.');
+    if (
+      normalizedOwnerId === undefined ||
+      (typeof normalizedOwnerId === 'string' && normalizedOwnerId.length === 0)
+    ) {
+      throw new MissingGenerationJobOwnerError();
+    }
+
+    const ownerId = resolveUniqueEntityID(normalizedOwnerId);
+
+    if (!ownerId) {
+      throw new MissingGenerationJobOwnerError();
     }
 
     if (projectName.length === 0) {
-      throw new Error('Generation job project name is required.');
+      throw new MissingGenerationJobProjectNameError();
     }
 
     if (projectDescription.length === 0) {
-      throw new Error('Generation job project description is required.');
+      throw new MissingGenerationJobProjectDescriptionError();
     }
 
     const createdAt = props.createdAt ?? new Date();
 
-    return new GenerationJob({
-      id: props.id ?? randomUUID(),
-      ownerId,
-      projectName,
-      projectDescription,
-      notes,
-      state: props.state ?? GenerationJobState.PENDING,
-      outputPath: props.outputPath ?? null,
-      failureReason: props.failureReason ?? null,
-      startedAt: props.startedAt ?? null,
-      completedAt: props.completedAt ?? null,
-      createdAt,
-      updatedAt: props.updatedAt ?? createdAt,
-    });
+    return new GenerationJob(
+      {
+        ownerId,
+        projectName,
+        projectDescription,
+        notes,
+        state: props.state ?? GenerationJobState.PENDING,
+        outputPath: props.outputPath ?? null,
+        failureReason: props.failureReason ?? null,
+        startedAt: props.startedAt ?? null,
+        completedAt: props.completedAt ?? null,
+        createdAt,
+        updatedAt: props.updatedAt ?? createdAt,
+      },
+      resolveUniqueEntityID(id),
+    );
   }
 
   start(startedAt: Date = new Date()): void {
     if (this.props.state !== GenerationJobState.PENDING) {
-      throw new Error('Only pending jobs can start.');
+      throw new InvalidGenerationJobStartTransitionError();
     }
 
     this.props.state = GenerationJobState.RUNNING;
@@ -73,13 +128,13 @@ export class GenerationJob {
 
   succeed(outputPath: string, completedAt: Date = new Date()): void {
     if (this.props.state !== GenerationJobState.RUNNING) {
-      throw new Error('Only running jobs can succeed.');
+      throw new InvalidGenerationJobSuccessTransitionError();
     }
 
     const normalizedOutputPath = outputPath.trim();
 
     if (normalizedOutputPath.length === 0) {
-      throw new Error('Successful jobs require an output path.');
+      throw new MissingGenerationJobOutputPathError();
     }
 
     this.props.state = GenerationJobState.SUCCEEDED;
@@ -91,13 +146,13 @@ export class GenerationJob {
 
   fail(failureReason: string, completedAt: Date = new Date()): void {
     if (this.props.state !== GenerationJobState.RUNNING) {
-      throw new Error('Only running jobs can fail.');
+      throw new InvalidGenerationJobFailureTransitionError();
     }
 
     const normalizedFailureReason = failureReason.trim();
 
     if (normalizedFailureReason.length === 0) {
-      throw new Error('Failed jobs require a failure reason.');
+      throw new MissingGenerationJobFailureReasonError();
     }
 
     this.props.state = GenerationJobState.FAILED;
@@ -107,11 +162,7 @@ export class GenerationJob {
     this.props.updatedAt = completedAt;
   }
 
-  get id(): string {
-    return this.props.id;
-  }
-
-  get ownerId(): string {
+  get ownerId(): UniqueEntityID {
     return this.props.ownerId;
   }
 

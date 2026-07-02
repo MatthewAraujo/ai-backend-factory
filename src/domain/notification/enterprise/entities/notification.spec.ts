@@ -1,3 +1,4 @@
+import { UniqueEntityID } from '@/core/entities/unique-entity-id';
 import {
   Notification,
   NotificationType,
@@ -15,6 +16,9 @@ describe('Notification', () => {
 
     expect(notification.readAt).toBeNull();
     expect(notification.isRead).toBe(false);
+    expect(notification.id).toBeInstanceOf(UniqueEntityID);
+    expect(notification.ownerId).toBeInstanceOf(UniqueEntityID);
+    expect(notification.generationJobId).toBeInstanceOf(UniqueEntityID);
   });
 
   it('marks a notification as read only once', () => {

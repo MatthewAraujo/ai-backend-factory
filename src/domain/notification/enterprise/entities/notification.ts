@@ -1,4 +1,16 @@
-import { randomUUID } from 'node:crypto';
+import { AggregateRoot } from '@/core/entities/aggregate-root';
+import {
+  type UniqueEntityID,
+  type UniqueEntityIDLike,
+  resolveOptionalUniqueEntityID,
+  resolveUniqueEntityID,
+} from '@/core/entities/unique-entity-id';
+import type { Optional } from '@/core/types/optional';
+import {
+  MissingNotificationContentError,
+  MissingNotificationOwnerError,
+  MissingNotificationTitleError,
+} from '@/domain/notification/enterprise/errors/notification-errors';
 
 export enum NotificationType {
   GENERATION_SUCCEEDED = 'GENERATION_SUCCEEDED',
@@ -7,50 +19,73 @@ export enum NotificationType {
 
 type NotificationProps = {
   content: string;
-  createdAt?: Date;
-  generationJobId?: string | null;
-  id?: string;
-  ownerId: string;
-  readAt?: Date | null;
+  createdAt: Date;
+  generationJobId: UniqueEntityID | null;
+  ownerId: UniqueEntityID;
+  readAt: Date | null;
   title: string;
   type: NotificationType;
-  updatedAt?: Date;
+  updatedAt: Date;
 };
 
-export class Notification {
-  private constructor(private props: Required<NotificationProps>) {}
+type CreateNotificationProps = Optional<
+  {
+    content: string;
+    createdAt?: Date;
+    generationJobId?: UniqueEntityIDLike | null;
+    ownerId: UniqueEntityIDLike;
+    readAt?: Date | null;
+    title: string;
+    type: NotificationType;
+    updatedAt?: Date;
+  },
+  'createdAt' | 'generationJobId' | 'readAt' | 'updatedAt'
+>;
 
-  static create(props: NotificationProps): Notification {
-    const ownerId = props.ownerId.trim();
+export class Notification extends AggregateRoot<NotificationProps> {
+  private constructor(props: NotificationProps, id?: UniqueEntityID) {
+    super(props, id);
+  }
+
+  static create(
+    props: CreateNotificationProps,
+    id?: UniqueEntityIDLike,
+  ): Notification {
+    const ownerId = resolveUniqueEntityID(props.ownerId);
     const title = props.title.trim();
     const content = props.content.trim();
-    const generationJobId = props.generationJobId?.trim() || null;
+    const generationJobId =
+      props.generationJobId === null
+        ? null
+        : resolveOptionalUniqueEntityID(props.generationJobId);
 
-    if (ownerId.length === 0) {
-      throw new Error('Notification owner is required.');
+    if (!ownerId) {
+      throw new MissingNotificationOwnerError();
     }
 
     if (title.length === 0) {
-      throw new Error('Notification title is required.');
+      throw new MissingNotificationTitleError();
     }
 
     if (content.length === 0) {
-      throw new Error('Notification content is required.');
+      throw new MissingNotificationContentError();
     }
 
     const createdAt = props.createdAt ?? new Date();
 
-    return new Notification({
-      id: props.id ?? randomUUID(),
-      ownerId,
-      generationJobId,
-      type: props.type,
-      title,
-      content,
-      readAt: props.readAt ?? null,
-      createdAt,
-      updatedAt: props.updatedAt ?? createdAt,
-    });
+    return new Notification(
+      {
+        ownerId,
+        generationJobId,
+        type: props.type,
+        title,
+        content,
+        readAt: props.readAt ?? null,
+        createdAt,
+        updatedAt: props.updatedAt ?? createdAt,
+      },
+      resolveUniqueEntityID(id),
+    );
   }
 
   markAsRead(readAt: Date = new Date()): void {
@@ -62,15 +97,11 @@ export class Notification {
     this.props.updatedAt = readAt;
   }
 
-  get id(): string {
-    return this.props.id;
-  }
-
-  get ownerId(): string {
+  get ownerId(): UniqueEntityID {
     return this.props.ownerId;
   }
 
-  get generationJobId(): string | null {
+  get generationJobId(): UniqueEntityID | null {
     return this.props.generationJobId;
   }
 

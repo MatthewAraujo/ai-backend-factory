@@ -45,6 +45,11 @@ export function createFakePrismaService() {
   const notifications = new Map<string, NotificationRecord>();
 
   return {
+    __internal: {
+      accounts,
+      generationJobs,
+      notifications,
+    },
     account: {
       async create({ data }: { data: AccountRecord }) {
         accounts.set(data.id, { ...data });

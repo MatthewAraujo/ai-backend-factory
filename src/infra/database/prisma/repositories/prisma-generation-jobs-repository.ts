@@ -40,7 +40,7 @@ export class PrismaGenerationJobsRepository
   async save(job: GenerationJob): Promise<void> {
     await this.prisma.generationJob.update({
       where: {
-        id: job.id,
+        id: job.id.toString(),
       },
       data: toPrismaGenerationJob(job),
     });

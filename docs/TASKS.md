@@ -8,14 +8,16 @@
   - `docs/adr/0001-forum-inspired-architecture.md`
   - `docs/adr/0002-deterministic-v1-generation.md`
   - `docs/adr/0003-single-process-v1.md`
+  - `docs/adr/0004-domain-core-and-use-case-error-boundary.md`
 - Architecture reference:
   - `forum-blueprint.md`
   - Most relevant sections: Tech Stack, Repository Structure, Architectural Style, Dependency Injection, Testing Strategy, Configuration and Environment, CI/CD and Quality Gates
 - Existing repository areas:
   - Bootstrap infrastructure, env validation, and the health endpoint are implemented
+  - Account, Generation Job, and notification entities plus Prisma-backed repositories are implemented
   - `PROJECT.md` exists and is the stable project handbook
   - No `docs/GLOSSARY.md` exists yet
-  - Domain, persistence, and auth implementation have not started yet
+  - Auth use cases/controllers, notification subscribers, and generation worker/event orchestration have not started yet
 
 ## 2. Implementation Goal
 
@@ -33,20 +35,22 @@ Create the first working version of AI Backend Factory as a forum-inspired NestJ
 - Deliver notifications by email, SMS, or push
 - Split API and worker into separate deployables
 - Auto-suffix duplicate project names
+- Push `UniqueEntityID` objects through HTTP DTOs or Prisma records
+- Return `Either` directly from entities or value objects
 
 ## 4. Acceptance Criteria Mapping
 
 | Acceptance Criterion | Task(s) | Test(s) | Status |
 | --- | --- | --- | --- |
-| AC-1 Authenticated registration and login via JWT | T1, T2, T3 | unit, e2e | planned |
-| AC-2 Authenticated job creation with `projectName`, `projectDescription`, `notes` | T2, T4 | unit, e2e | planned |
-| AC-3 Persisted owner-backed jobs with `PENDING`, `RUNNING`, `SUCCEEDED`, `FAILED` | T2, T4, T7 | unit, integration | planned |
+| AC-1 Authenticated registration and login via JWT | T1, T2, T2A, T3 | unit, e2e | planned |
+| AC-2 Authenticated job creation with `projectName`, `projectDescription`, `notes` | T2, T2A, T4 | unit, e2e | planned |
+| AC-3 Persisted owner-backed jobs with `PENDING`, `RUNNING`, `SUCCEEDED`, `FAILED` | T2, T2A, T4, T7 | unit, integration | planned |
 | AC-4 Users can list and fetch only their own jobs | T3, T4 | unit, e2e | planned |
 | AC-5 Successful jobs create a local generated project and initialize Git | T6, T7 | integration | planned |
 | AC-6 Jobs fail when target folder already exists | T7 | unit, integration | planned |
-| AC-7 Generated service contains the agreed Generic Foundation | T1, T6, T7, T8 | integration, manual smoke | planned |
-| AC-8 Factory Service follows the forum-inspired modular monolith style | T1, T2, T3, T4, T5, T7 | architecture review, unit, e2e | planned |
-| AC-9 In-app notifications are stored for job completion or failure | T2, T5, T7 | unit, integration, e2e | planned |
+| AC-7 Generated service contains the agreed Generic Foundation | T1, T2A, T6, T7, T8 | integration, manual smoke | planned |
+| AC-8 Factory Service follows the forum-inspired modular monolith style | T1, T2, T2A, T3, T4, T5, T7 | architecture review, unit, e2e | planned |
+| AC-9 In-app notifications are stored for job completion or failure | T2, T2A, T5, T7 | unit, integration, e2e | planned |
 | AC-10 Users can list notifications and mark one as read | T3, T5 | unit, e2e | planned |
 | AC-11 Generation is deterministic, local, and does not call an LLM or create remote repos | T6, T7, T8 | integration, code review | planned |
 | AC-12 No retry or cancellation API is exposed | T4, T7, T8 | e2e, route surface check | planned |
@@ -128,6 +132,43 @@ Dependencies:
 Completion signal:
 - Prisma schema, domain entities, repository ports, and Prisma adapters exist for the three core aggregates and support the read patterns required by the PRD.
 
+## T2A — Introduce Shared Domain Core And Use-Case Error Boundaries
+
+Status: done
+
+Objective:
+Add the shared DDD-lite core contract that both the Factory Service and Generated Services will follow, and refactor the current aggregates to use it before application use cases and controllers are added.
+
+Affected files / areas:
+- `src/core/entities/**`
+- `src/core/events/**`
+- `src/core/errors/**`
+- `src/core/either.ts`
+- `src/core/types/**`
+- `src/domain/account/enterprise/**`
+- `src/domain/factory/enterprise/**`
+- `src/domain/notification/enterprise/**`
+- `src/infra/database/prisma/mappers/**`
+- `src/infra/database/prisma/repositories/**`
+- `test/factories/**`
+
+Test-first plan:
+- Write failing unit tests for `UniqueEntityID`, entity equality, aggregate domain-event collection, and typed domain invariant errors.
+- Update current aggregate tests to assert the new id semantics and preserve the existing business behavior for email normalization, Generation Job state transitions, and notification read behavior.
+- Write failing repository contract regressions that prove Prisma records and repository lookup methods still use strings while aggregates expose `UniqueEntityID` internally.
+
+Implementation notes:
+- Add `Entity`, `AggregateRoot`, `UniqueEntityID`, `ValueObject`, optional-type helpers, and minimal in-process domain-event infrastructure in `src/core`.
+- Convert `Account`, `GenerationJob`, and `Notification` into aggregate roots and keep application/repository boundaries string-based.
+- Add typed domain errors for invariant violations and add `Either` plus `UseCaseError` foundation for T3+ use cases without pushing `Either` into the domain layer.
+- Prepare the same architectural contract for Generated Service templates, but do not implement template generation in this task.
+
+Dependencies:
+- T2
+
+Completion signal:
+- Current aggregates use the shared core primitives, persistence adapters preserve behavior across the new id boundary, and the repo contains the `Either`/`UseCaseError` foundation needed for T3 use cases.
+
 ## T3 — Implement Authentication And Protected Access
 
 Status: ready
@@ -156,7 +197,7 @@ Implementation notes:
 - Make protected-route ownership checks easy to reuse in later job and notification controllers.
 
 Dependencies:
-- T1, T2
+- T1, T2, T2A
 
 Completion signal:
 - Users can register and log in through the API, and protected routes can reliably resolve the authenticated Factory User.
@@ -186,7 +227,7 @@ Implementation notes:
 - Do not add retry or cancellation routes.
 
 Dependencies:
-- T2, T3
+- T2, T2A, T3
 
 Completion signal:
 - Authenticated users can create jobs and read only their own jobs through the API with correct initial state handling.
@@ -215,7 +256,7 @@ Implementation notes:
 - Wire notification creation off Generation Job terminal-state events rather than coupling it directly into controllers.
 
 Dependencies:
-- T2, T3, T4
+- T2, T2A, T3, T4
 
 Completion signal:
 - Users can read and acknowledge their own notifications, and the notification module is ready to consume job lifecycle events.
@@ -239,6 +280,7 @@ Implementation notes:
 - Prefer a clearly versioned local template tree over hidden string builders.
 - The generated baseline should include: health behavior, auth module, notification module, Prisma schema, Redis wiring, Docker assets, GitHub Actions, tests, README, and `PROJECT.md`.
 - Keep the generated architecture aligned with the blueprint without copying forum-specific business concepts.
+- Include the same shared core primitives and use-case error boundary conventions adopted by the Factory Service.
 
 Dependencies:
 - T1
@@ -275,7 +317,7 @@ Implementation notes:
 - A duplicate final directory should produce a `FAILED` job, not an alternate path.
 
 Dependencies:
-- T2, T4, T5, T6
+- T2, T2A, T4, T5, T6
 
 Completion signal:
 - Newly created jobs are processed asynchronously, create local projects under the workspace root, initialize Git, persist success or failure details, and emit terminal events.
@@ -312,12 +354,14 @@ Completion signal:
 ## 6. Test Strategy
 
 - Unit tests:
+  - Core entity/id primitives, aggregate event collection, and typed domain invariant errors
   - Account registration and authentication use cases
   - Generation Job creation rules, state handling, ownership checks, and duplicate-path decisions
   - Notification listing and read behavior
   - Template manifest and generation-planning logic
 - Integration tests:
   - Prisma-backed repository behavior for accounts, jobs, and notifications
+  - Prisma/domain id mapping across the `UniqueEntityID` boundary
   - In-process generation execution against the real workspace root contract
   - Filesystem generation, Git initialization, and terminal-state persistence
   - Notification creation from job lifecycle events
@@ -360,6 +404,9 @@ Completion signal:
 - Auth and ownership regressions:
   - Risk: jobs or notifications leak across users.
   - Mitigation: implement owner-scoped repository queries and add explicit cross-user e2e coverage.
+- Architecture drift across factory and generated services:
+  - Risk: the Factory Service adopts core modeling patterns that the generated baseline does not, creating blueprint drift.
+  - Mitigation: encode the shared core primitives and `Either` boundary in both the ADR and T6 template requirements before template generation starts.
 - CI flakiness:
   - Risk: Prisma, Redis, and filesystem-based tests become slow or inconsistent.
   - Mitigation: keep unit tests dominant, scope e2e coverage to the public contract, and isolate workspace directories per test run.
@@ -368,12 +415,13 @@ Completion signal:
 
 1. T1 to establish the factory scaffold, test harness, env handling, and health baseline.
 2. T2 to lock the domain and persistence model before controller work begins.
-3. T3 to establish account access and reusable protected-route behavior.
-4. T4 to expose job creation and job reads with owner scoping.
-5. T5 to expose notification reads and prepare event-driven notification handling.
-6. T6 to build the deterministic generated-service template pack independently of async execution.
-7. T7 to wire the in-process worker, filesystem generation, Git initialization, state transitions, and terminal events together.
-8. T8 to tighten CI, docs, and generated-output verification after the core behavior works.
+3. T2A to install the shared domain core and `Either` foundation before new use cases and controllers are written.
+4. T3 to establish account access and reusable protected-route behavior.
+5. T4 to expose job creation and job reads with owner scoping.
+6. T5 to expose notification reads and prepare event-driven notification handling.
+7. T6 to build the deterministic generated-service template pack independently of async execution.
+8. T7 to wire the in-process worker, filesystem generation, Git initialization, state transitions, and terminal events together.
+9. T8 to tighten CI, docs, and generated-output verification after the core behavior works.
 
 ## 9. Open Questions
 
@@ -387,4 +435,4 @@ Planning assumptions:
 
 Ready for `tdd`.
 
-Start with T1 and write the failing smoke and configuration tests described in the test-first plan.
+Start with T2A and write the failing core primitive and aggregate refactor tests described in the test-first plan.

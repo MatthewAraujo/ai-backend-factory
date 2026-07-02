@@ -18,15 +18,17 @@ type MakeNotificationOverrides = Partial<{
 export function makeNotification(
   overrides: MakeNotificationOverrides = {},
 ): Notification {
-  return Notification.create({
-    id: overrides.id,
-    ownerId: overrides.ownerId ?? 'owner-1',
-    generationJobId: overrides.generationJobId ?? 'job-1',
-    type: overrides.type ?? NotificationType.GENERATION_SUCCEEDED,
-    title: overrides.title ?? 'Generation completed',
-    content: overrides.content ?? 'Factory CRM is ready.',
-    readAt: overrides.readAt,
-    createdAt: overrides.createdAt,
-    updatedAt: overrides.updatedAt,
-  });
+  return Notification.create(
+    {
+      ownerId: overrides.ownerId ?? 'owner-1',
+      generationJobId: overrides.generationJobId ?? 'job-1',
+      type: overrides.type ?? NotificationType.GENERATION_SUCCEEDED,
+      title: overrides.title ?? 'Generation completed',
+      content: overrides.content ?? 'Factory CRM is ready.',
+      readAt: overrides.readAt,
+      createdAt: overrides.createdAt,
+      updatedAt: overrides.updatedAt,
+    },
+    overrides.id,
+  );
 }

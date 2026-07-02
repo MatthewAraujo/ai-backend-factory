@@ -21,19 +21,21 @@ type MakeGenerationJobOverrides = Partial<{
 export function makeGenerationJob(
   overrides: MakeGenerationJobOverrides = {},
 ): GenerationJob {
-  return GenerationJob.create({
-    id: overrides.id,
-    ownerId: overrides.ownerId ?? 'owner-1',
-    projectName: overrides.projectName ?? 'Factory CRM',
-    projectDescription:
-      overrides.projectDescription ?? 'A deterministic CRM starter',
-    notes: overrides.notes ?? 'Include audit logging later',
-    state: overrides.state,
-    outputPath: overrides.outputPath,
-    failureReason: overrides.failureReason,
-    startedAt: overrides.startedAt,
-    completedAt: overrides.completedAt,
-    createdAt: overrides.createdAt,
-    updatedAt: overrides.updatedAt,
-  });
+  return GenerationJob.create(
+    {
+      ownerId: overrides.ownerId ?? 'owner-1',
+      projectName: overrides.projectName ?? 'Factory CRM',
+      projectDescription:
+        overrides.projectDescription ?? 'A deterministic CRM starter',
+      notes: overrides.notes ?? 'Include audit logging later',
+      state: overrides.state,
+      outputPath: overrides.outputPath,
+      failureReason: overrides.failureReason,
+      startedAt: overrides.startedAt,
+      completedAt: overrides.completedAt,
+      createdAt: overrides.createdAt,
+      updatedAt: overrides.updatedAt,
+    },
+    overrides.id,
+  );
 }

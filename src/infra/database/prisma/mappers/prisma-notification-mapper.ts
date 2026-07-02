@@ -9,26 +9,28 @@ import {
 } from '@/domain/notification/enterprise/entities/notification';
 
 export function toDomainNotification(raw: PrismaNotification): Notification {
-  return Notification.create({
-    id: raw.id,
-    ownerId: raw.ownerId,
-    generationJobId: raw.generationJobId,
-    type: raw.type as NotificationType,
-    title: raw.title,
-    content: raw.content,
-    readAt: raw.readAt,
-    createdAt: raw.createdAt,
-    updatedAt: raw.updatedAt,
-  });
+  return Notification.create(
+    {
+      ownerId: raw.ownerId,
+      generationJobId: raw.generationJobId,
+      type: raw.type as NotificationType,
+      title: raw.title,
+      content: raw.content,
+      readAt: raw.readAt,
+      createdAt: raw.createdAt,
+      updatedAt: raw.updatedAt,
+    },
+    raw.id,
+  );
 }
 
 export function toPrismaNotification(
   notification: Notification,
 ): PrismaNotification {
   return {
-    id: notification.id,
-    ownerId: notification.ownerId,
-    generationJobId: notification.generationJobId,
+    id: notification.id.toString(),
+    ownerId: notification.ownerId.toString(),
+    generationJobId: notification.generationJobId?.toString() ?? null,
     type: notification.type as PrismaNotificationType,
     title: notification.title,
     content: notification.content,

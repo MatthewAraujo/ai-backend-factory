@@ -9,11 +9,13 @@ type MakeAccountOverrides = Partial<{
 }>;
 
 export function makeAccount(overrides: MakeAccountOverrides = {}): Account {
-  return Account.create({
-    id: overrides.id,
-    email: overrides.email ?? 'factory.user@example.com',
-    passwordHash: overrides.passwordHash ?? 'hashed-password',
-    createdAt: overrides.createdAt,
-    updatedAt: overrides.updatedAt,
-  });
+  return Account.create(
+    {
+      email: overrides.email ?? 'factory.user@example.com',
+      passwordHash: overrides.passwordHash ?? 'hashed-password',
+      createdAt: overrides.createdAt,
+      updatedAt: overrides.updatedAt,
+    },
+    overrides.id,
+  );
 }

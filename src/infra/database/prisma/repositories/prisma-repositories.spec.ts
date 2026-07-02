@@ -1,3 +1,4 @@
+import { UniqueEntityID } from '@/core/entities/unique-entity-id';
 import { PrismaAccountsRepository } from '@/infra/database/prisma/repositories/prisma-accounts-repository';
 import { PrismaGenerationJobsRepository } from '@/infra/database/prisma/repositories/prisma-generation-jobs-repository';
 import { PrismaNotificationsRepository } from '@/infra/database/prisma/repositories/prisma-notifications-repository';
@@ -22,8 +23,12 @@ describe('Prisma repositories', () => {
     );
 
     expect(foundAccount).not.toBeNull();
-    expect(foundAccount?.id).toBe(account.id);
+    expect(foundAccount?.id).toBeInstanceOf(UniqueEntityID);
+    expect(foundAccount?.id.toString()).toBe(account.id.toString());
     expect(foundAccount?.email).toBe('factory.user@example.com');
+    expect(prisma.__internal.accounts.get(account.id.toString())?.id).toBe(
+      account.id.toString(),
+    );
   });
 
   it('lists only generation jobs owned by the requested account and preserves metadata', async () => {
@@ -58,12 +63,17 @@ describe('Prisma repositories', () => {
     const jobs = await repository.findManyByOwnerId('owner-1');
 
     expect(jobs).toHaveLength(2);
-    expect(jobs.map((job) => job.id)).toEqual(['job-2', 'job-1']);
+    expect(jobs.map((job) => job.id.toString())).toEqual(['job-2', 'job-1']);
+    expect(jobs[0]?.id).toBeInstanceOf(UniqueEntityID);
+    expect(jobs[0]?.ownerId).toBeInstanceOf(UniqueEntityID);
     expect(jobs[0]?.outputPath).toBe(
       '/home/matthew/personal/ai-backend-factory/repos/factory-crm',
     );
     expect(jobs[0]?.completedAt).toEqual(new Date('2026-07-01T21:05:00.000Z'));
     expect(jobs[1]?.outputPath).toBeNull();
+    expect(prisma.__internal.generationJobs.get('job-2')?.ownerId).toBe(
+      'owner-1',
+    );
   });
 
   it('lists only notifications for the requested owner and persists read state', async () => {
@@ -94,13 +104,16 @@ describe('Prisma repositories', () => {
     const notifications = await repository.findManyByOwnerId('owner-1');
 
     expect(notifications).toHaveLength(2);
-    expect(notifications.map((notification) => notification.id)).toEqual([
-      'notification-2',
-      'notification-1',
-    ]);
+    expect(
+      notifications.map((notification) => notification.id.toString()),
+    ).toEqual(['notification-2', 'notification-1']);
+    expect(notifications[0]?.generationJobId).toBeInstanceOf(UniqueEntityID);
     expect(notifications[0]?.readAt).toEqual(
       new Date('2026-07-01T21:10:00.000Z'),
     );
     expect(notifications[1]?.readAt).toBeNull();
+    expect(
+      prisma.__internal.notifications.get('notification-2')?.generationJobId,
+    ).toBe('job-1');
   });
 });
