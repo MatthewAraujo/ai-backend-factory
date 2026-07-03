@@ -364,7 +364,7 @@ Completion signal:
 
 ## T8 — Finalize Operational Quality Gates And Output Verification
 
-Status: planned
+Status: done
 
 Objective:
 Harden the repo so both the Factory Service and the generated baseline are verifiable through local and CI workflows.
@@ -480,6 +480,4 @@ Planning assumptions:
 
 ## 10. Handoff to tdd
 
-Ready for `tdd`.
-
-Start with T8 and add the failing automation-oriented verification described in the test-first plan.
+T8 completed.

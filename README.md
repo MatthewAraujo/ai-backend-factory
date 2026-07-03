@@ -2,13 +2,12 @@
 
 AI Backend Factory is a NestJS modular monolith that will let authenticated users submit deterministic backend generation jobs and receive blueprint-aligned generated services under a fixed local workspace root.
 
-This repository currently contains the baseline T1 foundation only:
-- NestJS bootstrap and health endpoint
-- startup environment validation
-- Prisma, Redis, Docker, CI, and test scaffolding
-- onboarding and workflow documentation
-
-Feature work for authentication, generation jobs, notifications, and generated-service templates is intentionally not implemented yet.
+The current implementation includes:
+- account registration and JWT-based login
+- authenticated generation-job create, list, and detail endpoints
+- in-app notification list and mark-as-read endpoints
+- deterministic local generated-service output with in-process job execution
+- Prisma, Redis, Docker, CI, and test scaffolding for the Factory Service
 
 ## Current Stack
 
@@ -79,9 +78,18 @@ docs/
 
 `GET /health`
 
-The endpoint returns a simple status payload so the scaffold can be exercised before feature work begins.
+Additional implemented API routes:
+- `POST /accounts`
+- `POST /sessions`
+- `POST /generation-jobs`
+- `GET /generation-jobs`
+- `GET /generation-jobs/:id`
+- `GET /notifications`
+- `PATCH /notifications/:id/read`
 
-## Next Step
+## v1 Limits
 
-Continue with T2 from `docs/TASKS.md`: model the account, factory, and notification domains plus Prisma-backed persistence.
-
+- Generation runs in the same NestJS process as the HTTP API.
+- Jobs are one-shot only: no retry or cancellation endpoints exist in v1.
+- Output is always written under the configured workspace root.
+- Generated services are deterministic generic foundations only; domain-specific business modules are out of scope.

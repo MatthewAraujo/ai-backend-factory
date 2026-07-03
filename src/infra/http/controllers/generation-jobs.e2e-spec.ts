@@ -1,4 +1,4 @@
-import { mkdtemp, rm, stat } from 'node:fs/promises';
+import { access, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -173,6 +173,86 @@ describe('Generation jobs (e2e)', () => {
     await expect(
       stat(path.join(workspaceRoot, 'async-ops-api', '.git')),
     ).resolves.toBeDefined();
+  });
+
+  it('covers the primary authenticated flow from job creation to generated output verification and notification read', async () => {
+    const accessToken = await createAccountAndAuthenticate(
+      'jobs.flow@example.com',
+    );
+
+    const createResponse = await request(app.getHttpServer())
+      .post('/generation-jobs')
+      .set('authorization', `Bearer ${accessToken}`)
+      .send({
+        projectName: 'Platform Core API',
+        projectDescription: 'A generated service for flow verification',
+        notes: 'verify generated output inventory and notification flow',
+      });
+
+    expect(createResponse.status).toBe(201);
+
+    const terminalResponse = await waitForTerminalJobState(
+      accessToken,
+      createResponse.body.generationJob.id,
+    );
+    const outputPath = path.join(workspaceRoot, 'platform-core-api');
+
+    expect(terminalResponse.status).toBe(200);
+    expect(terminalResponse.body.generationJob).toMatchObject({
+      id: createResponse.body.generationJob.id,
+      state: 'SUCCEEDED',
+      outputPath,
+      failureReason: null,
+    });
+
+    await Promise.all(
+      [
+        '.github/workflows/ci.yml',
+        'PROJECT.md',
+        'README.md',
+        'docker-compose.yml',
+        'package.json',
+        'prisma/schema.prisma',
+        'src/core/entities/entity.ts',
+        'src/core/errors/use-case-error.ts',
+        'src/domain/auth/application/use-cases/authenticate.ts',
+        'src/domain/notification/application/use-cases/list-notifications.ts',
+        'src/infra/cache/redis/redis.module.ts',
+        'src/infra/http/controllers/health.controller.ts',
+        'test/e2e/health.e2e-spec.ts',
+      ].map(async (artifactPath) => {
+        await access(path.join(outputPath, artifactPath));
+      }),
+    );
+
+    const notificationsResponse = await request(app.getHttpServer())
+      .get('/notifications')
+      .set('authorization', `Bearer ${accessToken}`);
+
+    expect(notificationsResponse.status).toBe(200);
+    expect(notificationsResponse.body.notifications).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: expect.any(String),
+          title: 'Generation completed',
+          isRead: false,
+        }),
+      ]),
+    );
+
+    const [notification] = notificationsResponse.body.notifications;
+
+    const readResponse = await request(app.getHttpServer())
+      .patch(`/notifications/${notification.id}/read`)
+      .set('authorization', `Bearer ${accessToken}`)
+      .send();
+
+    expect(readResponse.status).toBe(200);
+    expect(readResponse.body.notification).toMatchObject({
+      id: notification.id,
+      isRead: true,
+      readAt: expect.any(String),
+    });
   });
 
   it('lists only generation jobs owned by the authenticated user', async () => {

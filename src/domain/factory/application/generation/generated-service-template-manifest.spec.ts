@@ -8,9 +8,9 @@ describe('generated service template manifest', () => {
     const manifest = getGeneratedServiceTemplateManifest();
 
     expect(manifest.version).toBe(GENERATED_SERVICE_TEMPLATE_VERSION);
-    expect(manifest.templateRoot.endsWith('/templates/generated-service/v1')).toBe(
-      true,
-    );
+    expect(
+      manifest.templateRoot.endsWith('/templates/generated-service/v1'),
+    ).toBe(true);
     expect(manifest.artifacts).toEqual(
       expect.arrayContaining([
         '.github/workflows/ci.yml',

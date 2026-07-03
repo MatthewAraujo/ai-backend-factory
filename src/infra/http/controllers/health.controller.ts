@@ -4,7 +4,7 @@ import { Controller, Get } from '@nestjs/common';
 
 @Controller('health')
 export class HealthController {
-  constructor(@Inject(EnvService) private readonly envService: EnvService) { }
+  constructor(@Inject(EnvService) private readonly envService: EnvService) {}
 
   @Get()
   check() {

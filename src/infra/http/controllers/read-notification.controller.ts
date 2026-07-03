@@ -1,4 +1,12 @@
-import { Controller, HttpCode, HttpStatus, Inject, Param, Patch, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Patch,
+  UseGuards,
+} from '@nestjs/common';
 import { z } from 'zod';
 
 import { ReadNotificationUseCase } from '@/domain/notification/application/use-cases/read-notification';
@@ -13,7 +21,9 @@ const readNotificationParamsSchema = z.object({
   notificationId: z.string().min(1),
 });
 
-type ReadNotificationParamsSchema = z.infer<typeof readNotificationParamsSchema>;
+type ReadNotificationParamsSchema = z.infer<
+  typeof readNotificationParamsSchema
+>;
 
 @Controller('/notifications')
 export class ReadNotificationController {

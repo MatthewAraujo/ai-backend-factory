@@ -1,6 +1,59 @@
 @baseUrl = http://localhost:3333
+@email = factory.user@example.com
+@password = secret-123
+@jobId = replace-me
+@notificationId = replace-me
 
 ### Health
 GET {{baseUrl}}/health
 Accept: application/json
 
+### Register
+POST {{baseUrl}}/accounts
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Login
+# @name login
+POST {{baseUrl}}/sessions
+Content-Type: application/json
+
+{
+  "email": "{{email}}",
+  "password": "{{password}}"
+}
+
+### Create generation job
+POST {{baseUrl}}/generation-jobs
+Authorization: Bearer {{login.response.body.accessToken}}
+Content-Type: application/json
+
+{
+  "projectName": "Factory CRM",
+  "projectDescription": "A deterministic CRM starter",
+  "notes": "Include audit logging later"
+}
+
+### List generation jobs
+GET {{baseUrl}}/generation-jobs
+Authorization: Bearer {{login.response.body.accessToken}}
+Accept: application/json
+
+### Get generation job
+GET {{baseUrl}}/generation-jobs/{{jobId}}
+Authorization: Bearer {{login.response.body.accessToken}}
+Accept: application/json
+
+### List notifications
+GET {{baseUrl}}/notifications
+Authorization: Bearer {{login.response.body.accessToken}}
+Accept: application/json
+
+### Mark notification as read
+PATCH {{baseUrl}}/notifications/{{notificationId}}/read
+Authorization: Bearer {{login.response.body.accessToken}}
+Accept: application/json

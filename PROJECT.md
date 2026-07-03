@@ -4,7 +4,7 @@
 
 AI Backend Factory is a backend-only NestJS service that accepts structured generation requests and produces deterministic, blueprint-aligned backend foundations under the local workspace root at `/home/matthew/personal/ai-backend-factory/repos`.
 
-The repository is currently at the project-foundation stage. The implemented runtime surface now includes bootstrap infrastructure, environment validation, health and authentication endpoints, domain models for accounts, Generation Jobs, and notifications, plus Prisma-backed persistence adapters for those aggregates.
+The implemented runtime surface includes bootstrap infrastructure, environment validation, registration and JWT login, authenticated Generation Job and notification endpoints, in-process deterministic generation under the workspace root, and Prisma-backed persistence adapters for the core aggregates.
 
 ## Tech Stack
 
@@ -79,6 +79,8 @@ Secrets must stay in local environment files or external secret stores and must 
 - `pnpm test:e2e`
 
 CI is defined in `.github/workflows/ci.yml`.
+
+Generated-output verification is covered in automated tests through the authenticated Generation Job flow and expected template artifact assertions.
 
 ## Documentation Links
 
