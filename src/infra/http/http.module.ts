@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { GeneratedServiceGenerator } from '@/domain/factory/application/services/generated-service-generator';
+import { GeneratedServiceWorkflowRunner } from '@/domain/factory/application/services/generated-service-workflow-runner';
 import { GenerationJobDispatcher } from '@/domain/factory/application/services/generation-job-dispatcher';
 import { AuthenticateAccountUseCase } from '@/domain/factory/application/use-cases/authenticate-account';
 import { CreateGenerationJobUseCase } from '@/domain/factory/application/use-cases/create-generation-job';
@@ -29,6 +30,7 @@ import { ReadNotificationController } from '@/infra/http/controllers/read-notifi
 import { RegisterAccountController } from '@/infra/http/controllers/register-account.controller';
 import { GitCliProcessRunner } from '@/infra/process/git-cli-process-runner';
 import { GitProcessRunner } from '@/infra/process/git-process-runner';
+import { OrchestrationGeneratedServiceWorkflowRunner } from '@/infra/process/orchestration-generated-service-workflow-runner';
 
 @Module({
   imports: [EnvModule, DatabaseModule, AuthModule],
@@ -54,9 +56,14 @@ import { GitProcessRunner } from '@/infra/process/git-process-runner';
     OnGenerationJobTerminalState,
     RegisterDomainEventHandlers,
     GitCliProcessRunner,
+    OrchestrationGeneratedServiceWorkflowRunner,
     {
       provide: GitProcessRunner,
       useExisting: GitCliProcessRunner,
+    },
+    {
+      provide: GeneratedServiceWorkflowRunner,
+      useExisting: OrchestrationGeneratedServiceWorkflowRunner,
     },
     {
       provide: WorkspaceRootPathProvider,

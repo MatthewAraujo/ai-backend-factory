@@ -2,9 +2,9 @@
 
 ## Overview
 
-AI Backend Factory is a backend-only NestJS service that accepts structured generation requests and produces deterministic, blueprint-aligned backend foundations under the local workspace root at `/home/matthew/personal/ai-backend-factory/repos`.
+AI Backend Factory is a backend-only NestJS service that accepts structured generation requests and produces blueprint-aligned backend services under the local workspace root at `/home/matthew/personal/ai-backend-factory/repos`.
 
-The implemented runtime surface includes bootstrap infrastructure, environment validation, registration and JWT login, authenticated Generation Job and notification endpoints, in-process deterministic generation under the workspace root, and Prisma-backed persistence adapters for the core aggregates.
+The implemented runtime surface includes bootstrap infrastructure, environment validation, registration and JWT login, authenticated Generation Job and notification endpoints, local baseline generation under the workspace root, and Prisma-backed persistence adapters for the core aggregates. The next active upgrade replaces template-only output with baseline-plus-Codex backend generation driven by generated repository feature scopes.
 
 ## Tech Stack
 
@@ -23,7 +23,8 @@ The implemented runtime surface includes bootstrap infrastructure, environment v
 ## Repository Layout
 
 ```text
-docs/                 Planning artifacts, ADRs, and requirements
+docs/                 Shared planning artifacts, ADRs, and requirements
+features/             Active feature-scoped implementation plans
 prisma/               Prisma schema and future migrations
 repos/                Generated-service workspace root
 src/core/             Shared low-level primitives
@@ -80,18 +81,20 @@ Secrets must stay in local environment files or external secret stores and must 
 
 CI is defined in `.github/workflows/ci.yml`.
 
-Generated-output verification is covered in automated tests through the authenticated Generation Job flow and expected template artifact assertions.
+Generated-output verification is covered in automated tests through the authenticated Generation Job flow. The active upgrade expands verification from baseline artifact assertions to guarded-Codex backend content generation.
 
 ## Documentation Links
 
 - Requirements: `docs/PRD.md`
-- Task plan: `docs/TASKS.md`
+- Legacy task plan: `docs/TASKS.md`
+- Active feature scopes: `features/`
 - ADRs: `docs/adr/`
 - Context: `CONTEXT.md`
 
 ## Working Conventions
 
 - Follow the workflow in the repository instructions: planning artifacts first, then task-by-task `tdd`.
+- Prefer `features/<slug>.md` for new active implementation scopes. Treat `docs/TASKS.md` as the legacy plan for the original build-out.
 - Use `forum-blueprint.md` as the architecture reference for layering, DI, testing style, and operations.
 - Run `mise install` before `pnpm ...` commands on a new machine so the pinned toolchain from `mise.toml` is available.
 - Keep generated services inside `repos/` and out of version control except for `repos/.gitkeep`.

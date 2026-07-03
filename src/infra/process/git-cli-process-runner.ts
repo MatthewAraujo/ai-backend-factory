@@ -14,4 +14,26 @@ export class GitCliProcessRunner implements GitProcessRunner {
       cwd: directory,
     });
   }
+
+  async createInitialCommit(directory: string, message: string): Promise<void> {
+    await execFileAsync('git', ['add', '-A'], {
+      cwd: directory,
+    });
+    await execFileAsync(
+      'git',
+      [
+        '-c',
+        'user.name=AI Backend Factory',
+        '-c',
+        'user.email=generated-service@example.invalid',
+        'commit',
+        '--no-gpg-sign',
+        '-m',
+        message,
+      ],
+      {
+        cwd: directory,
+      },
+    );
+  }
 }

@@ -37,16 +37,20 @@ A user-facing notification emitted by the Factory Service when a Generation Job 
 _Avoid_: log entry, internal event, toast only
 
 **Generated Service**:
-The backend starter project produced by the Factory Service for a specific user request.
+The backend service produced by the Factory Service for a specific user request, including both the reusable baseline and at least one generated business-domain slice.
 _Avoid_: clone, repo, app
 
 **Workspace Root**:
 The fixed local directory where the Factory Service creates Generated Services in v1, under `/home/matthew/personal/ai-backend-factory/repos`.
 _Avoid_: per-request output path, arbitrary filesystem target, user-selected destination
 
-**Generic Foundation**:
-The reusable backend baseline produced in v1 before any domain-specific modules, entities, or business routes are added.
-_Avoid_: final product, domain implementation, custom business logic
+**Generation Baseline**:
+The reusable backend starting point produced before domain-specific Codex generation begins. It provides the stack, shared primitives, workflow files, and seed structure that the generated service builds on.
+_Avoid_: final product, full implementation, finished backend
+
+**Feature Scope File**:
+The generated-repository task plan stored as `features/<slug>.md` that defines the single backend scope the guarded Codex runner must complete.
+_Avoid_: backlog, roadmap, arbitrary notes file
 
 **Opinionated Stack**:
 The single approved backend technology combination used by v1 for every Generated Service, derived from the Blueprint rather than selected per request.
@@ -56,9 +60,13 @@ _Avoid_: stack options, presets, variants
 The primary architectural reference that guides how the Factory Service and each Generated Service should be structured without copying a source system verbatim.
 _Avoid_: template, starter code, boilerplate dump
 
-**Deterministic Generation**:
-The v1 generation approach where the Factory Service creates a Generated Service from local blueprint-aligned templates and assembly rules instead of using an LLM to write files.
-_Avoid_: AI-first generation, freeform code synthesis, prompt-only scaffolding
+**Guarded Codex Generation**:
+The generation phase where the Factory Service invokes a local guarded Codex runner against the generated repository until the selected Feature Scope File has no ready tasks remaining.
+_Avoid_: manual follow-up, template-only generation, one-shot prompt dump
+
+**Working Domain Slice**:
+The minimum acceptable domain-specific backend implementation produced for a Generated Service: one bounded context with real domain language, at least one aggregate root, supporting entities or value objects as needed, persistence, use cases, HTTP endpoints, and tests.
+_Avoid_: placeholder module, empty controller, fake sample code
 
 **One-shot Generation**:
 The v1 execution model where a Generation Job can be created and tracked but not cancelled or retried through the API.
@@ -75,3 +83,7 @@ _Avoid_: workflow control, retryable orchestration, cancellable runs
 - Bootstrap environments may leave `JWT_PRIVATE_KEY` and `JWT_PUBLIC_KEY` blank before T3. The env parser should normalize blank values to `undefined` so the service can boot before authentication is implemented.
 - Nest constructor injection in the Vitest runtime should use explicit `@Inject(...)` parameter decorators for providers used in e2e tests. This avoids relying on constructor metadata that the test transform may not preserve consistently.
 - Prisma repository adapters are intentionally typed against the small delegate surface they use. This keeps adapter contract tests fast with a fake Prisma client while preserving the Prisma-backed persistence boundary for later tasks.
+- Backend generation cannot stop at the baseline template. A Factory User expects the Generated Service to include meaningful domain content shaped by `projectDescription` and `notes`, not only matching folders and placeholder files.
+- The Generation Request `notes` field is part of the generation contract. It must influence the generated business-domain scope instead of being stored only as metadata.
+- A successful Generation Job now requires two phases: baseline repository bootstrap by the Factory Service, then guarded Codex execution inside that repository until its selected Feature Scope File is complete.
+- The guarded Codex runner requires a clean git checkout. The Factory Service must therefore create an initial baseline commit in the Generated Service before it can invoke the runner.

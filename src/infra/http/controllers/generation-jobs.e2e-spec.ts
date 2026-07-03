@@ -1,6 +1,8 @@
+import { execFile } from 'node:child_process';
 import { access, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import { promisify } from 'node:util';
 
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
@@ -8,6 +10,7 @@ import request from 'supertest';
 
 import { AccountsRepository } from '@/domain/factory/application/repositories/accounts-repository';
 import { GenerationJobsRepository } from '@/domain/factory/application/repositories/generation-jobs-repository';
+import { GeneratedServiceWorkflowRunner } from '@/domain/factory/application/services/generated-service-workflow-runner';
 import { GenerationJobState } from '@/domain/factory/enterprise/entities/generation-job';
 import { NotificationsRepository } from '@/domain/notification/application/repositories/notifications-repository';
 import { AppModule } from '@/infra/app.module';
@@ -16,11 +19,28 @@ import { InMemoryAccountsRepository } from '../../../../test/repositories/in-mem
 import { InMemoryGenerationJobsRepository } from '../../../../test/repositories/in-memory-generation-jobs-repository';
 import { InMemoryNotificationsRepository } from '../../../../test/repositories/in-memory-notifications-repository';
 
+const execFileAsync = promisify(execFile);
+
 class StaticWorkspaceRootPathProvider implements WorkspaceRootPathProvider {
   constructor(private readonly workspaceRoot: string) {}
 
   getPath(): string {
     return this.workspaceRoot;
+  }
+}
+
+class FakeGeneratedServiceWorkflowRunner
+  implements GeneratedServiceWorkflowRunner
+{
+  async run(params: {
+    featureFileRelativePath: string;
+    repositoryPath: string;
+  }): Promise<void> {
+    if (params.repositoryPath.endsWith('runner-failure-api')) {
+      throw new Error(
+        `Guarded Codex runner failed for ${params.featureFileRelativePath}.`,
+      );
+    }
   }
 }
 
@@ -48,6 +68,8 @@ describe('Generation jobs (e2e)', () => {
       .useValue(notificationsRepository)
       .overrideProvider(WorkspaceRootPathProvider)
       .useValue(new StaticWorkspaceRootPathProvider(workspaceRoot))
+      .overrideProvider(GeneratedServiceWorkflowRunner)
+      .useValue(new FakeGeneratedServiceWorkflowRunner())
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -207,10 +229,13 @@ describe('Generation jobs (e2e)', () => {
 
     await Promise.all(
       [
+        'AGENTS.md',
         '.github/workflows/ci.yml',
         'PROJECT.md',
         'README.md',
+        'WORKFLOW.md',
         'docker-compose.yml',
+        'features/platform-core-api.md',
         'package.json',
         'prisma/schema.prisma',
         'src/core/entities/entity.ts',
@@ -224,6 +249,10 @@ describe('Generation jobs (e2e)', () => {
         await access(path.join(outputPath, artifactPath));
       }),
     );
+    await expect(runGit(['status', '--short'], outputPath)).resolves.toBe('');
+    await expect(
+      runGit(['rev-list', '--count', 'HEAD'], outputPath),
+    ).resolves.toBe('1');
 
     const notificationsResponse = await request(app.getHttpServer())
       .get('/notifications')
@@ -252,6 +281,38 @@ describe('Generation jobs (e2e)', () => {
       id: notification.id,
       isRead: true,
       readAt: expect.any(String),
+    });
+  });
+
+  it('marks the generation job as failed when guarded workflow execution fails', async () => {
+    const accessToken = await createAccountAndAuthenticate(
+      'jobs.runner.failure@example.com',
+    );
+
+    const createResponse = await request(app.getHttpServer())
+      .post('/generation-jobs')
+      .set('authorization', `Bearer ${accessToken}`)
+      .send({
+        projectName: 'Runner Failure API',
+        projectDescription: 'A generated service for runner failure checks',
+        notes: 'simulate a guarded workflow execution failure',
+      });
+
+    expect(createResponse.status).toBe(201);
+
+    const terminalResponse = await waitForTerminalJobState(
+      accessToken,
+      createResponse.body.generationJob.id,
+    );
+
+    expect(terminalResponse.status).toBe(200);
+    expect(terminalResponse.body.generationJob).toMatchObject({
+      id: createResponse.body.generationJob.id,
+      state: 'FAILED',
+      outputPath: null,
+      failureReason: expect.stringContaining(
+        'Guarded Codex runner failed for features/runner-failure-api.md.',
+      ),
     });
   });
 
@@ -316,3 +377,11 @@ describe('Generation jobs (e2e)', () => {
     expect(response.status).toBe(404);
   });
 });
+
+async function runGit(args: string[], cwd: string): Promise<string> {
+  const { stdout } = await execFileAsync('git', args, {
+    cwd,
+  });
+
+  return stdout.trim();
+}
