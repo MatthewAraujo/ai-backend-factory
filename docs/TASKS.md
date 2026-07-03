@@ -299,7 +299,7 @@ Completion signal:
 
 ## T6 — Author The Deterministic Generated-Service Template Pack
 
-Status: planned
+Status: done
 
 Objective:
 Create the local blueprint-aligned template assets and assembly rules for the Generic Foundation that the factory will generate.
