@@ -2,7 +2,7 @@ import type { AggregateRoot } from '@/core/entities/aggregate-root';
 import type { UniqueEntityID } from '@/core/entities/unique-entity-id';
 import type { DomainEvent } from '@/core/events/domain-event';
 
-type DomainEventHandler = (event: DomainEvent) => void;
+type DomainEventHandler = (event: DomainEvent) => void | Promise<void>;
 
 const handlersMap = new Map<string, DomainEventHandler[]>();
 let markedAggregates: AggregateRoot<unknown>[] = [];
@@ -16,7 +16,7 @@ export const DomainEvents = {
     markedAggregates = [];
   },
 
-  dispatchEventsForAggregate(aggregateId: UniqueEntityID): void {
+  async dispatchEventsForAggregate(aggregateId: UniqueEntityID): Promise<void> {
     const aggregate = markedAggregates.find((candidate) =>
       candidate.id.equals(aggregateId),
     );
@@ -26,7 +26,7 @@ export const DomainEvents = {
     }
 
     for (const event of aggregate.domainEvents) {
-      dispatch(event);
+      await dispatch(event);
     }
 
     aggregate.clearEvents();
@@ -53,11 +53,11 @@ export const DomainEvents = {
   },
 };
 
-function dispatch(event: DomainEvent): void {
+async function dispatch(event: DomainEvent): Promise<void> {
   const eventName = event.constructor.name;
   const handlers = handlersMap.get(eventName) ?? [];
 
   for (const handler of handlers) {
-    handler(event);
+    await handler(event);
   }
 }

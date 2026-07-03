@@ -5,6 +5,8 @@ import {
   resolveUniqueEntityID,
 } from '@/core/entities/unique-entity-id';
 import type { Optional } from '@/core/types/optional';
+import { GenerationJobFailedEvent } from '@/domain/factory/application/events/generation-job-failed-event';
+import { GenerationJobSucceededEvent } from '@/domain/factory/application/events/generation-job-succeeded-event';
 import {
   InvalidGenerationJobFailureTransitionError,
   InvalidGenerationJobStartTransitionError,
@@ -142,6 +144,7 @@ export class GenerationJob extends AggregateRoot<GenerationJobProps> {
     this.props.failureReason = null;
     this.props.completedAt = completedAt;
     this.props.updatedAt = completedAt;
+    this.addDomainEvent(new GenerationJobSucceededEvent(this));
   }
 
   fail(failureReason: string, completedAt: Date = new Date()): void {
@@ -160,6 +163,7 @@ export class GenerationJob extends AggregateRoot<GenerationJobProps> {
     this.props.outputPath = null;
     this.props.completedAt = completedAt;
     this.props.updatedAt = completedAt;
+    this.addDomainEvent(new GenerationJobFailedEvent(this));
   }
 
   get ownerId(): UniqueEntityID {

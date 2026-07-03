@@ -1,3 +1,4 @@
+import type { GenerationJobDispatcher } from '@/domain/factory/application/services/generation-job-dispatcher';
 import { CreateGenerationJobUseCase } from '@/domain/factory/application/use-cases/create-generation-job';
 import { ResourceNotFoundError } from '@/domain/factory/application/use-cases/errors/resource-not-found-error';
 import { GetGenerationJobDetailsUseCase } from '@/domain/factory/application/use-cases/get-generation-job-details';
@@ -7,10 +8,19 @@ import { GenerationJobState } from '@/domain/factory/enterprise/entities/generat
 import { makeGenerationJob } from '../../../../../test/factories/make-generation-job';
 import { InMemoryGenerationJobsRepository } from '../../../../../test/repositories/in-memory-generation-jobs-repository';
 
+class FakeGenerationJobDispatcher implements GenerationJobDispatcher {
+  public queuedJobIds: string[] = [];
+
+  async dispatch(generationJobId: string): Promise<void> {
+    this.queuedJobIds.push(generationJobId);
+  }
+}
+
 describe('Generation job use cases', () => {
   it('creates a pending generation job for the authenticated owner', async () => {
     const jobsRepository = new InMemoryGenerationJobsRepository();
-    const sut = new CreateGenerationJobUseCase(jobsRepository);
+    const dispatcher = new FakeGenerationJobDispatcher();
+    const sut = new CreateGenerationJobUseCase(jobsRepository, dispatcher);
 
     const result = await sut.execute({
       ownerId: 'owner-1',
@@ -34,6 +44,9 @@ describe('Generation job use cases', () => {
       },
     });
     expect(jobsRepository.items).toHaveLength(1);
+    expect(dispatcher.queuedJobIds).toEqual([
+      result.value.generationJob.id.toString(),
+    ]);
   });
 
   it('lists only generation jobs owned by the requested account in reverse chronological order', async () => {

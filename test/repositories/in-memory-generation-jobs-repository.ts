@@ -1,3 +1,4 @@
+import { DomainEvents } from '@/core/events/domain-events';
 import type { GenerationJobsRepository } from '@/domain/factory/application/repositories/generation-jobs-repository';
 import type { GenerationJob } from '@/domain/factory/enterprise/entities/generation-job';
 
@@ -8,6 +9,7 @@ export class InMemoryGenerationJobsRepository
 
   async create(job: GenerationJob): Promise<void> {
     this.items.push(job);
+    await DomainEvents.dispatchEventsForAggregate(job.id);
   }
 
   async save(job: GenerationJob): Promise<void> {
@@ -16,6 +18,8 @@ export class InMemoryGenerationJobsRepository
     if (itemIndex >= 0) {
       this.items[itemIndex] = job;
     }
+
+    await DomainEvents.dispatchEventsForAggregate(job.id);
   }
 
   async findById(id: string): Promise<GenerationJob | null> {

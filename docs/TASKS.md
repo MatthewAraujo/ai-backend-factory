@@ -328,7 +328,7 @@ Completion signal:
 
 ## T7 — Implement In-Process Generation Execution
 
-Status: planned
+Status: done
 
 Objective:
 Run Generation Jobs asynchronously inside the Factory Service, generate the local project, initialize Git, and persist terminal job outcomes.
@@ -482,4 +482,4 @@ Planning assumptions:
 
 Ready for `tdd`.
 
-Start with T3 and write the failing registration and authentication tests described in the test-first plan.
+Start with T8 and add the failing automation-oriented verification described in the test-first plan.

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { GenerationJob as PrismaGenerationJob } from '@prisma/client';
 
+import { DomainEvents } from '@/core/events/domain-events';
 import type { GenerationJobsRepository } from '@/domain/factory/application/repositories/generation-jobs-repository';
 import type { GenerationJob } from '@/domain/factory/enterprise/entities/generation-job';
 import {
@@ -35,6 +36,7 @@ export class PrismaGenerationJobsRepository
     await this.prisma.generationJob.create({
       data: toPrismaGenerationJob(job),
     });
+    await DomainEvents.dispatchEventsForAggregate(job.id);
   }
 
   async save(job: GenerationJob): Promise<void> {
@@ -44,6 +46,7 @@ export class PrismaGenerationJobsRepository
       },
       data: toPrismaGenerationJob(job),
     });
+    await DomainEvents.dispatchEventsForAggregate(job.id);
   }
 
   async findById(id: string): Promise<GenerationJob | null> {

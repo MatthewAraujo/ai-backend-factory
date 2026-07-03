@@ -41,7 +41,9 @@ describe('Notification use cases', () => {
 
     expect(result.isRight()).toBe(true);
     expect(
-      result.value.notifications.map((notification) => notification.id.toString()),
+      result.value.notifications.map((notification) =>
+        notification.id.toString(),
+      ),
     ).toEqual(['notification-2', 'notification-1']);
   });
 
@@ -63,6 +65,9 @@ describe('Notification use cases', () => {
     });
 
     expect(result.isRight()).toBe(true);
+    if (result.isLeft()) {
+      throw result.value;
+    }
     expect(result.value.notification.isRead).toBe(true);
     expect(result.value.notification.readAt).toEqual(expect.any(Date));
   });

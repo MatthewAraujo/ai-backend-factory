@@ -11,10 +11,11 @@ import { InMemoryNotificationsRepository } from '../../../../test/repositories/i
 
 describe('Notifications (e2e)', () => {
   let app: INestApplication;
+  let accountsRepository: InMemoryAccountsRepository;
   let notificationsRepository: InMemoryNotificationsRepository;
 
   beforeAll(async () => {
-    const accountsRepository = new InMemoryAccountsRepository();
+    accountsRepository = new InMemoryAccountsRepository();
     notificationsRepository = new InMemoryNotificationsRepository();
 
     const moduleRef = await Test.createTestingModule({
@@ -54,45 +55,21 @@ describe('Notifications (e2e)', () => {
     const accessToken = await createAccountAndAuthenticate(
       'notifications.list.owner@example.com',
     );
-    const foreignAccessToken = await createAccountAndAuthenticate(
+    await createAccountAndAuthenticate(
       'notifications.list.foreign@example.com',
     );
-
-    await request(app.getHttpServer())
-      .post('/generation-jobs')
-      .set('authorization', `Bearer ${accessToken}`)
-      .send({
-        projectName: 'Owner job',
-        projectDescription: 'Owned by the caller',
-        notes: 'owner notes',
-      });
-
-    await request(app.getHttpServer())
-      .post('/generation-jobs')
-      .set('authorization', `Bearer ${foreignAccessToken}`)
-      .send({
-        projectName: 'Foreign job',
-        projectDescription: 'Owned by a different user',
-        notes: 'foreign notes',
-      });
-
-    const ownerJob = (
-      await request(app.getHttpServer())
-        .get('/generation-jobs')
-        .set('authorization', `Bearer ${accessToken}`)
-    ).body.generationJobs[0];
-
-    const foreignJob = (
-      await request(app.getHttpServer())
-        .get('/generation-jobs')
-        .set('authorization', `Bearer ${foreignAccessToken}`)
-    ).body.generationJobs[0];
+    const ownerAccount = await accountsRepository.findByEmail(
+      'notifications.list.owner@example.com',
+    );
+    const foreignAccount = await accountsRepository.findByEmail(
+      'notifications.list.foreign@example.com',
+    );
 
     await notificationsRepository.create(
       makeNotification({
         id: 'notification-1',
-        ownerId: ownerJob.ownerId,
-        generationJobId: ownerJob.id,
+        ownerId: ownerAccount?.id.toString(),
+        generationJobId: null,
         title: 'Owner notification',
         content: 'Ready for the owner.',
       }),
@@ -100,8 +77,8 @@ describe('Notifications (e2e)', () => {
     await notificationsRepository.create(
       makeNotification({
         id: 'notification-2',
-        ownerId: foreignJob.ownerId,
-        generationJobId: foreignJob.id,
+        ownerId: foreignAccount?.id.toString(),
+        generationJobId: null,
         title: 'Foreign notification',
         content: 'Should stay hidden.',
       }),
@@ -125,27 +102,15 @@ describe('Notifications (e2e)', () => {
     const accessToken = await createAccountAndAuthenticate(
       'notifications.read.owner@example.com',
     );
-
-    await request(app.getHttpServer())
-      .post('/generation-jobs')
-      .set('authorization', `Bearer ${accessToken}`)
-      .send({
-        projectName: 'Notification job',
-        projectDescription: 'Creates a job for notification ownership',
-        notes: 'notes',
-      });
-
-    const ownerJob = (
-      await request(app.getHttpServer())
-        .get('/generation-jobs')
-        .set('authorization', `Bearer ${accessToken}`)
-    ).body.generationJobs[0];
+    const ownerAccount = await accountsRepository.findByEmail(
+      'notifications.read.owner@example.com',
+    );
 
     await notificationsRepository.create(
       makeNotification({
         id: 'notification-read-1',
-        ownerId: ownerJob.ownerId,
-        generationJobId: ownerJob.id,
+        ownerId: ownerAccount?.id.toString(),
+        generationJobId: null,
         readAt: null,
       }),
     );
@@ -170,27 +135,15 @@ describe('Notifications (e2e)', () => {
     const foreignAccessToken = await createAccountAndAuthenticate(
       'notifications.get.foreign@example.com',
     );
-
-    await request(app.getHttpServer())
-      .post('/generation-jobs')
-      .set('authorization', `Bearer ${ownerAccessToken}`)
-      .send({
-        projectName: 'Private notification job',
-        projectDescription: 'Should not leak across users',
-        notes: 'private notes',
-      });
-
-    const ownerJob = (
-      await request(app.getHttpServer())
-        .get('/generation-jobs')
-        .set('authorization', `Bearer ${ownerAccessToken}`)
-    ).body.generationJobs[0];
+    const ownerAccount = await accountsRepository.findByEmail(
+      'notifications.get.owner@example.com',
+    );
 
     await notificationsRepository.create(
       makeNotification({
         id: 'notification-private-1',
-        ownerId: ownerJob.ownerId,
-        generationJobId: ownerJob.id,
+        ownerId: ownerAccount?.id.toString(),
+        generationJobId: null,
       }),
     );
 
