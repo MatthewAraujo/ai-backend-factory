@@ -103,6 +103,7 @@ describe('ProcessGenerationJobUseCase', () => {
         'WORKFLOW.md',
         'PROJECT.md',
         'CONTEXT.md',
+        'docs/PRD.md',
         'features/factory-crm.md',
       ].map(async (artifactPath) => {
         await stat(path.join(workspaceRoot, 'factory-crm', artifactPath));
@@ -124,6 +125,7 @@ describe('ProcessGenerationJobUseCase', () => {
     );
     const [
       contextFile,
+      prdFile,
       generatedScopeFile,
       projectFile,
       featureScopeFile,
@@ -131,6 +133,7 @@ describe('ProcessGenerationJobUseCase', () => {
       gitCommitCount,
     ] = await Promise.all([
       readFile(path.join(workspaceRoot, 'factory-crm', 'CONTEXT.md'), 'utf8'),
+      readFile(path.join(workspaceRoot, 'factory-crm', 'docs/PRD.md'), 'utf8'),
       readFile(
         path.join(
           workspaceRoot,
@@ -160,11 +163,24 @@ describe('ProcessGenerationJobUseCase', () => {
     expect(contextFile).toContain('# Factory CRM');
     expect(contextFile).toContain('A deterministic CRM starter');
     expect(contextFile).toContain('Include audit logging later');
+    expect(prdFile).toContain('# Product Requirements Document');
+    expect(prdFile).toContain('Factory CRM');
+    expect(prdFile).toContain('A deterministic CRM starter');
+    expect(prdFile).toContain('Include audit logging later');
+    expect(prdFile).toContain('## Acceptance Criteria');
+    expect(prdFile).toContain('## Validation Plan');
     expect(generatedScopeFile).toContain('guarded-runner-completed');
     expect(featureScopeFile).toContain('Status: done');
     expect(featureScopeFile).toContain('# Factory CRM');
     expect(featureScopeFile).toContain('A deterministic CRM starter');
     expect(featureScopeFile).toContain('Include audit logging later');
+    expect(featureScopeFile).toContain('## Acceptance Criteria Mapping');
+    expect(featureScopeFile).toContain('## T1');
+    expect(featureScopeFile).toContain('Status: done');
+    expect(featureScopeFile).toContain('## T2');
+    expect(featureScopeFile).toContain('## T3');
+    expect(featureScopeFile).toContain('## Validation');
+    expect(featureScopeFile).toContain('pnpm test:e2e');
     expect(notificationsRepository.items).toHaveLength(1);
     expect(notificationsRepository.items[0]).toMatchObject({
       ownerId: expect.objectContaining({

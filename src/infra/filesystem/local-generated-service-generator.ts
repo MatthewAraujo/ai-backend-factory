@@ -110,6 +110,12 @@ async function writeGeneratedWorkspaceFiles(
 ): Promise<void> {
   const projectSlug = normalizeProjectSlug(generationJob.projectName);
   const featureFileRelativePath = `features/${projectSlug}.md`;
+  const generatedPrd = renderGeneratedPrdFile({
+    featureFileRelativePath,
+    notes: generationJob.notes,
+    projectDescription: generationJob.projectDescription,
+    projectName: generationJob.projectName,
+  });
 
   await Promise.all([
     writeFile(
@@ -164,10 +170,19 @@ async function writeGeneratedWorkspaceFiles(
   await mkdir(path.join(repositoryRoot, 'features'), {
     recursive: true,
   });
+  await mkdir(path.join(repositoryRoot, 'docs'), {
+    recursive: true,
+  });
+  await writeFile(
+    path.join(repositoryRoot, 'docs/PRD.md'),
+    generatedPrd,
+    'utf8',
+  );
   await writeFile(
     path.join(repositoryRoot, featureFileRelativePath),
     renderFeatureScopeFile({
       featureFileRelativePath,
+      generatedPrd,
       notes: generationJob.notes,
       projectDescription: generationJob.projectDescription,
       projectName: generationJob.projectName,
@@ -317,24 +332,105 @@ function renderPackageJsonFile(params: {
 `;
 }
 
-function renderFeatureScopeFile(params: {
+function renderGeneratedPrdFile(params: {
   featureFileRelativePath: string;
   notes: string;
   projectDescription: string;
   projectName: string;
 }): string {
+  return `# Product Requirements Document
+
+## Problem Statement
+
+${params.projectName} needs a continuation-ready backend that reflects the submitted request instead of only a generic starter. The generated repository should give the next implementation step enough domain context, requirements, assumptions, and validation guidance to build safely without rediscovering the product from scratch.
+
+## Solution
+
+Generate a serious first backend for ${params.projectName} using the opinionated baseline and a single request-shaped implementation scope. The repository should preserve the modular monolith structure, start from generated project memory, and prioritize the smallest backend slice that proves the product workflow implied by the brief.
+
+## User Stories
+
+1. As a product team, we want a backend for ${params.projectName}, so that we can implement ${params.projectDescription.toLowerCase()}.
+2. As a maintainer, we want the generated repository to capture request-specific notes such as "${params.notes}", so that follow-up implementation decisions stay aligned with the original brief.
+3. As a future contributor, we want a repo-local PRD and feature scope before deeper implementation starts, so that we can continue safely with explicit requirements and validation expectations.
+
+## Implementation Decisions
+
+- Use the generated repository baseline stack and preserve the forum-inspired modular monolith structure.
+- Keep the first generated scope focused on one bounded context or workflow slice that best represents ${params.projectName}.
+- Treat the request notes as implementation-shaping constraints, not optional metadata.
+- Prefer recommended defaults when the brief leaves details open, and record those defaults as assumptions in repository docs.
+- Use \`${params.featureFileRelativePath}\` as the active execution plan for guarded or manual continuation work.
+
+## Acceptance Criteria
+
+1. The backend vocabulary, entities, routes, and persistence plan reflect ${params.projectName} and the brief "${params.projectDescription}" instead of placeholder sample terminology.
+2. The generated implementation plan explicitly accounts for the request note "${params.notes}".
+3. The first backend slice includes domain logic, persistence, an application/use-case layer, HTTP endpoints, and automated tests.
+4. The repository remains continuation-ready with project memory, this PRD, and an execution-ready feature scope before deeper implementation begins.
+
+## Testing Decisions
+
+- Prefer unit tests for domain rules and decision logic derived from the brief.
+- Prefer integration tests for persistence, use-case orchestration, and module boundaries in the generated slice.
+- Keep at least one end-to-end test for the primary HTTP workflow introduced by the first generated scope.
+
+## Out of Scope
+
+- Completing the entire product backend in one pass.
+- Adding multiple unrelated feature scopes during initial generation.
+- Replacing the baseline stack or the modular monolith structure.
+
+## Validation Plan
+
+- \`pnpm lint\`
+- \`pnpm typecheck\`
+- \`pnpm test\`
+- \`pnpm test:e2e\`
+
+## Further Notes
+
+- Active implementation scope: \`${params.featureFileRelativePath}\`
+- Source brief: ${params.projectDescription}
+- Source notes: ${params.notes}
+`;
+}
+
+function renderFeatureScopeFile(params: {
+  featureFileRelativePath: string;
+  generatedPrd: string;
+  notes: string;
+  projectDescription: string;
+  projectName: string;
+}): string {
+  const prdAcceptanceCriteria = extractSection(
+    params.generatedPrd,
+    '## Acceptance Criteria',
+    '## Testing Decisions',
+  );
+
   return `# ${params.projectName}
 
 Status: ready
 
 ## Summary
 
-Generate the first working backend slice for ${params.projectName} based on the submitted product brief.
+Implement the first continuation-ready backend slice for ${params.projectName} using the generated repository PRD and request notes as the execution baseline.
 
 ## Product Brief
 
 - Project description: ${params.projectDescription}
 - Notes: ${params.notes}
+
+## Source Context
+
+- Requirements: \`docs/PRD.md\`
+- Project memory: \`PROJECT.md\`, \`CONTEXT.md\`
+- Active scope file: \`${params.featureFileRelativePath}\`
+
+## Acceptance Criteria Mapping
+
+${prdAcceptanceCriteria}
 
 ## Validation
 
@@ -343,24 +439,75 @@ Generate the first working backend slice for ${params.projectName} based on the 
 - \`pnpm test\`
 - \`pnpm test:e2e\`
 
-## T1 — Model the core domain and persistence
+## T1 — Shape the domain slice and persistence model
 
 Status: ready
 
-Define the primary business language, aggregate root, supporting entities or value objects, and persistence model needed to satisfy the product brief.
+Objective:
+Define the request-shaped bounded context, aggregate root, supporting entities or value objects, and persistence model needed to satisfy the primary workflow implied by the brief.
 
-## T2 — Implement the application and HTTP slice
+Implementation notes:
+
+- Start from the smallest serious domain slice that proves the core workflow for ${params.projectName}.
+- Use terminology taken from the brief instead of generic sample names.
+- Make sure the model leaves room for the constraint "${params.notes}".
+
+Validation focus:
+
+- Unit tests for domain rules and value objects.
+- Integration coverage for persistence mapping.
+
+## T2 — Implement the application and HTTP workflow
 
 Status: ready
 
-Add the use cases, controllers, presenters, and repository adapters needed to make the generated backend behavior work end-to-end.
+Objective:
+Add the use cases, controllers, presenters, and repository adapters needed to make the chosen backend workflow work end-to-end.
 
-## T3 — Validate and document the generated backend
+Implementation notes:
+
+- Expose one primary HTTP flow that demonstrates the generated domain slice.
+- Keep controller behavior thin and map application errors explicitly.
+- Make "${params.notes}" observable in the application behavior or validation rules where relevant.
+
+Validation focus:
+
+- Integration tests for use-case orchestration.
+- End-to-end coverage for the primary route flow.
+
+## T3 — Validate and finalize continuation readiness
 
 Status: ready
 
-Expand tests, tighten repository docs, and leave the generated repo in a state where the initial feature scope can be marked done.
+Objective:
+Tighten tests, reconcile repository docs with the implemented slice, and leave the generated repository safe for follow-up guarded or human continuation work.
+
+Implementation notes:
+
+- Update repository docs when implementation choices materially refine the assumptions from \`docs/PRD.md\`.
+- Ensure validation commands pass for the generated slice.
+- Mark the scope done only after the generated backend, tests, and docs are coherent.
+
+Validation focus:
+
+- Full targeted validation for the generated slice.
+- Final documentation sanity check against the original brief and notes.
 `;
+}
+
+function extractSection(
+  document: string,
+  startHeading: string,
+  endHeading: string,
+): string {
+  const startIndex = document.indexOf(startHeading);
+  const endIndex = document.indexOf(endHeading);
+
+  if (startIndex === -1 || endIndex === -1 || endIndex <= startIndex) {
+    return '- Acceptance criteria unavailable';
+  }
+
+  return document.slice(startIndex + startHeading.length, endIndex).trim();
 }
 
 function normalizeProjectSlug(projectName: string): string {

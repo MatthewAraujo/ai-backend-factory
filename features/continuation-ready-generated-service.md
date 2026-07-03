@@ -109,7 +109,7 @@ Completed notes:
 
 ## T2 — Synthesize generated backend PRD and feature plan
 
-Status: ready
+Status: done
 
 Objective:
 Generate repo-local `docs/PRD.md` and a much richer `features/<slug>.md` from the request so the guarded loop receives an execution-ready plan instead of a generic three-task placeholder.
@@ -139,6 +139,12 @@ Dependencies:
 Completion signal:
 
 - A generated repo contains a request-shaped `docs/PRD.md` and an execution-ready `features/<slug>.md` that are strong enough for immediate guarded implementation.
+
+Completed notes:
+
+- The generator now writes a request-shaped generated `docs/PRD.md` before the guarded loop begins.
+- Generated `features/<slug>.md` files now include source context, acceptance-criteria mapping, richer task objectives, implementation notes, and validation focus derived from the request.
+- Use-case and e2e coverage now assert that generated planning artifacts exist and reflect `projectDescription` and `notes`.
 
 ## T3 — Reorder generation flow around the planning pack
 
@@ -192,4 +198,4 @@ No blocking open questions.
 
 ## Handoff To TDD
 
-Ready for `tdd`. T1 is complete. Start T2 next by adding failing assertions for generated `docs/PRD.md` and a richer `features/<slug>.md`.
+Ready for `tdd`. T1 and T2 are complete. Start T3 next by proving guarded execution begins only after the full planning pack exists and that generated `WORKFLOW.md` enforces the new document order.

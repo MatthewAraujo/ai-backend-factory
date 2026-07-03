@@ -229,6 +229,7 @@ describe('Generation jobs (e2e)', () => {
         'AGENTS.md',
         '.github/workflows/ci.yml',
         'CONTEXT.md',
+        'docs/PRD.md',
         'PROJECT.md',
         'README.md',
         'WORKFLOW.md',
@@ -248,11 +249,16 @@ describe('Generation jobs (e2e)', () => {
         await access(path.join(outputPath, artifactPath));
       }),
     );
-    const [contextFile, projectFile, featureScopeFile] = await Promise.all([
-      readFile(path.join(outputPath, 'CONTEXT.md'), 'utf8'),
-      readFile(path.join(outputPath, 'PROJECT.md'), 'utf8'),
-      readFile(path.join(outputPath, 'features/platform-core-api.md'), 'utf8'),
-    ]);
+    const [contextFile, prdFile, projectFile, featureScopeFile] =
+      await Promise.all([
+        readFile(path.join(outputPath, 'CONTEXT.md'), 'utf8'),
+        readFile(path.join(outputPath, 'docs/PRD.md'), 'utf8'),
+        readFile(path.join(outputPath, 'PROJECT.md'), 'utf8'),
+        readFile(
+          path.join(outputPath, 'features/platform-core-api.md'),
+          'utf8',
+        ),
+      ]);
     await expect(runGit(['status', '--short'], outputPath)).resolves.toBe('');
     await expect(
       runGit(['rev-list', '--count', 'HEAD'], outputPath),
@@ -265,7 +271,20 @@ describe('Generation jobs (e2e)', () => {
     expect(contextFile).toContain(
       'verify generated output inventory and notification flow',
     );
+    expect(prdFile).toContain('# Product Requirements Document');
+    expect(prdFile).toContain('Platform Core API');
+    expect(prdFile).toContain('A generated service for flow verification');
+    expect(prdFile).toContain(
+      'verify generated output inventory and notification flow',
+    );
+    expect(prdFile).toContain('## Acceptance Criteria');
+    expect(prdFile).toContain('## Validation Plan');
     expect(featureScopeFile).toContain('Status: done');
+    expect(featureScopeFile).toContain('## Acceptance Criteria Mapping');
+    expect(featureScopeFile).toContain('## T1');
+    expect(featureScopeFile).toContain('## T2');
+    expect(featureScopeFile).toContain('## T3');
+    expect(featureScopeFile).toContain('pnpm test:e2e');
 
     const notificationsResponse = await request(app.getHttpServer())
       .get('/notifications')
