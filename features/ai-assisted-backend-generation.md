@@ -1,6 +1,6 @@
 # AI-Assisted Backend Generation
 
-Status: ready
+Status: done
 
 ## Summary
 
@@ -181,7 +181,7 @@ Completion signal:
 
 ## T4 — Expand integration and end-to-end coverage for domain-aware generation
 
-Status: ready
+Status: done
 
 Update filesystem, use-case, and authenticated API tests so success requires generated-repository workflow files and guarded-runner completion, and failure covers Codex-orchestration errors with no template-only fallback.
 

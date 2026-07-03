@@ -15,6 +15,7 @@ import type { WorkspaceRootPathProvider } from '@/infra/filesystem/workspace-roo
 import { GitCliProcessRunner } from '@/infra/process/git-cli-process-runner';
 
 import { makeGenerationJob } from '../../../../../test/factories/make-generation-job';
+import { DeterministicGeneratedServiceWorkflowRunner } from '../../../../../test/fakes/deterministic-generated-service-workflow-runner';
 import { InMemoryGenerationJobsRepository } from '../../../../../test/repositories/in-memory-generation-jobs-repository';
 import { InMemoryNotificationsRepository } from '../../../../../test/repositories/in-memory-notifications-repository';
 
@@ -25,18 +26,6 @@ class StaticWorkspaceRootPathProvider implements WorkspaceRootPathProvider {
 
   getPath(): string {
     return this.workspaceRoot;
-  }
-}
-
-class FakeGeneratedServiceWorkflowRunner
-  implements GeneratedServiceWorkflowRunner
-{
-  constructor(private readonly failWith?: Error) {}
-
-  async run(): Promise<void> {
-    if (this.failWith) {
-      throw this.failWith;
-    }
   }
 }
 
@@ -63,7 +52,7 @@ describe('ProcessGenerationJobUseCase', () => {
     const generator = new LocalGeneratedServiceGenerator(
       new StaticWorkspaceRootPathProvider(workspaceRoot),
       new GitCliProcessRunner(),
-      new FakeGeneratedServiceWorkflowRunner(),
+      new DeterministicGeneratedServiceWorkflowRunner(),
     );
     const subscriber = new OnGenerationJobTerminalState(
       notificationsRepository,
@@ -115,26 +104,46 @@ describe('ProcessGenerationJobUseCase', () => {
         },
       ),
     );
+    await expect(
+      stat(
+        path.join(
+          workspaceRoot,
+          'factory-crm',
+          'src/domain/generated/enterprise/entities/generated-scope.ts',
+        ),
+      ),
+    ).resolves.toBeDefined();
 
     const gitHead = await readFile(
       path.join(workspaceRoot, 'factory-crm', '.git', 'HEAD'),
       'utf8',
     );
-    const [featureScopeFile, gitStatus, gitCommitCount] = await Promise.all([
-      readFile(
-        path.join(workspaceRoot, 'factory-crm', 'features/factory-crm.md'),
-        'utf8',
-      ),
-      runGit(['status', '--short'], path.join(workspaceRoot, 'factory-crm')),
-      runGit(
-        ['rev-list', '--count', 'HEAD'],
-        path.join(workspaceRoot, 'factory-crm'),
-      ),
-    ]);
+    const [generatedScopeFile, featureScopeFile, gitStatus, gitCommitCount] =
+      await Promise.all([
+        readFile(
+          path.join(
+            workspaceRoot,
+            'factory-crm',
+            'src/domain/generated/enterprise/entities/generated-scope.ts',
+          ),
+          'utf8',
+        ),
+        readFile(
+          path.join(workspaceRoot, 'factory-crm', 'features/factory-crm.md'),
+          'utf8',
+        ),
+        runGit(['status', '--short'], path.join(workspaceRoot, 'factory-crm')),
+        runGit(
+          ['rev-list', '--count', 'HEAD'],
+          path.join(workspaceRoot, 'factory-crm'),
+        ),
+      ]);
 
     expect(gitHead).toContain('refs/heads/');
     expect(gitStatus).toBe('');
-    expect(gitCommitCount).toBe('1');
+    expect(gitCommitCount).toBe('2');
+    expect(generatedScopeFile).toContain('guarded-runner-completed');
+    expect(featureScopeFile).toContain('Status: done');
     expect(featureScopeFile).toContain('# Factory CRM');
     expect(featureScopeFile).toContain('A deterministic CRM starter');
     expect(featureScopeFile).toContain('Include audit logging later');
@@ -158,7 +167,7 @@ describe('ProcessGenerationJobUseCase', () => {
     const generator = new LocalGeneratedServiceGenerator(
       new StaticWorkspaceRootPathProvider(workspaceRoot),
       new GitCliProcessRunner(),
-      new FakeGeneratedServiceWorkflowRunner(),
+      new DeterministicGeneratedServiceWorkflowRunner(),
     );
     const subscriber = new OnGenerationJobTerminalState(
       notificationsRepository,
@@ -208,7 +217,7 @@ describe('ProcessGenerationJobUseCase', () => {
     const generator = new LocalGeneratedServiceGenerator(
       new StaticWorkspaceRootPathProvider(workspaceRoot),
       new GitCliProcessRunner(),
-      new FakeGeneratedServiceWorkflowRunner(),
+      new DeterministicGeneratedServiceWorkflowRunner(),
     );
     const sut = new ProcessGenerationJobUseCase(jobsRepository, generator);
 
@@ -247,9 +256,9 @@ describe('ProcessGenerationJobUseCase', () => {
     const generator = new LocalGeneratedServiceGenerator(
       new StaticWorkspaceRootPathProvider(workspaceRoot),
       new GitCliProcessRunner(),
-      new FakeGeneratedServiceWorkflowRunner(
-        new Error('Codex runner is unavailable.'),
-      ),
+      new DeterministicGeneratedServiceWorkflowRunner({
+        'factory-crm': 'Codex runner is unavailable.',
+      }),
     );
     const subscriber = new OnGenerationJobTerminalState(
       notificationsRepository,
@@ -285,6 +294,33 @@ describe('ProcessGenerationJobUseCase', () => {
     expect(generationJob?.failureReason).toContain(
       'Codex runner is unavailable.',
     );
+    await expect(
+      stat(path.join(workspaceRoot, 'factory-crm')),
+    ).resolves.toBeDefined();
+    await expect(
+      stat(
+        path.join(
+          workspaceRoot,
+          'factory-crm',
+          'src/domain/generated/enterprise/entities/generated-scope.ts',
+        ),
+      ),
+    ).rejects.toThrow();
+    await expect(
+      readFile(
+        path.join(workspaceRoot, 'factory-crm', 'features/factory-crm.md'),
+        'utf8',
+      ),
+    ).resolves.toContain('Status: ready');
+    await expect(
+      runGit(['status', '--short'], path.join(workspaceRoot, 'factory-crm')),
+    ).resolves.toBe('');
+    await expect(
+      runGit(
+        ['rev-list', '--count', 'HEAD'],
+        path.join(workspaceRoot, 'factory-crm'),
+      ),
+    ).resolves.toBe('1');
     expect(notificationsRepository.items).toHaveLength(1);
     expect(notificationsRepository.items[0]).toMatchObject({
       type: NotificationType.GENERATION_FAILED,

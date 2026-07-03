@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { access, mkdtemp, rm, stat } from 'node:fs/promises';
+import { access, mkdtemp, readFile, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -15,6 +15,7 @@ import { GenerationJobState } from '@/domain/factory/enterprise/entities/generat
 import { NotificationsRepository } from '@/domain/notification/application/repositories/notifications-repository';
 import { AppModule } from '@/infra/app.module';
 import { WorkspaceRootPathProvider } from '@/infra/filesystem/workspace-root-path-provider';
+import { DeterministicGeneratedServiceWorkflowRunner } from '../../../../test/fakes/deterministic-generated-service-workflow-runner';
 import { InMemoryAccountsRepository } from '../../../../test/repositories/in-memory-accounts-repository';
 import { InMemoryGenerationJobsRepository } from '../../../../test/repositories/in-memory-generation-jobs-repository';
 import { InMemoryNotificationsRepository } from '../../../../test/repositories/in-memory-notifications-repository';
@@ -26,21 +27,6 @@ class StaticWorkspaceRootPathProvider implements WorkspaceRootPathProvider {
 
   getPath(): string {
     return this.workspaceRoot;
-  }
-}
-
-class FakeGeneratedServiceWorkflowRunner
-  implements GeneratedServiceWorkflowRunner
-{
-  async run(params: {
-    featureFileRelativePath: string;
-    repositoryPath: string;
-  }): Promise<void> {
-    if (params.repositoryPath.endsWith('runner-failure-api')) {
-      throw new Error(
-        `Guarded Codex runner failed for ${params.featureFileRelativePath}.`,
-      );
-    }
   }
 }
 
@@ -69,7 +55,12 @@ describe('Generation jobs (e2e)', () => {
       .overrideProvider(WorkspaceRootPathProvider)
       .useValue(new StaticWorkspaceRootPathProvider(workspaceRoot))
       .overrideProvider(GeneratedServiceWorkflowRunner)
-      .useValue(new FakeGeneratedServiceWorkflowRunner())
+      .useValue(
+        new DeterministicGeneratedServiceWorkflowRunner({
+          'runner-failure-api':
+            'Guarded Codex runner failed for features/runner-failure-api.md.',
+        }),
+      )
       .compile();
 
     app = moduleRef.createNestApplication();
@@ -245,6 +236,7 @@ describe('Generation jobs (e2e)', () => {
         'package.json',
         'prisma/schema.prisma',
         'src/core/entities/entity.ts',
+        'src/domain/generated/enterprise/entities/generated-scope.ts',
         'src/core/errors/use-case-error.ts',
         'src/domain/auth/application/use-cases/authenticate.ts',
         'src/domain/notification/application/use-cases/list-notifications.ts',
@@ -255,10 +247,15 @@ describe('Generation jobs (e2e)', () => {
         await access(path.join(outputPath, artifactPath));
       }),
     );
+    const featureScopeFile = await readFile(
+      path.join(outputPath, 'features/platform-core-api.md'),
+      'utf8',
+    );
     await expect(runGit(['status', '--short'], outputPath)).resolves.toBe('');
     await expect(
       runGit(['rev-list', '--count', 'HEAD'], outputPath),
-    ).resolves.toBe('1');
+    ).resolves.toBe('2');
+    expect(featureScopeFile).toContain('Status: done');
 
     const notificationsResponse = await request(app.getHttpServer())
       .get('/notifications')
@@ -322,6 +319,40 @@ describe('Generation jobs (e2e)', () => {
         'Guarded Codex runner failed for features/runner-failure-api.md.',
       ),
     });
+    await expect(
+      stat(path.join(workspaceRoot, 'runner-failure-api')),
+    ).resolves.toBeDefined();
+    await expect(
+      stat(
+        path.join(
+          workspaceRoot,
+          'runner-failure-api',
+          'src/domain/generated/enterprise/entities/generated-scope.ts',
+        ),
+      ),
+    ).rejects.toThrow();
+    await expect(
+      readFile(
+        path.join(
+          workspaceRoot,
+          'runner-failure-api',
+          'features/runner-failure-api.md',
+        ),
+        'utf8',
+      ),
+    ).resolves.toContain('Status: ready');
+    await expect(
+      runGit(
+        ['rev-list', '--count', 'HEAD'],
+        path.join(workspaceRoot, 'runner-failure-api'),
+      ),
+    ).resolves.toBe('1');
+    await expect(
+      runGit(
+        ['status', '--short'],
+        path.join(workspaceRoot, 'runner-failure-api'),
+      ),
+    ).resolves.toBe('');
 
     const notificationsResponse = await request(app.getHttpServer())
       .get('/notifications')
