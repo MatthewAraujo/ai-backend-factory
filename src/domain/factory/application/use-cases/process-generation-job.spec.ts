@@ -95,6 +95,12 @@ describe('ProcessGenerationJobUseCase', () => {
     expect(generationJob?.outputPath).toBe(
       path.join(workspaceRoot, 'factory-crm'),
     );
+    expect(generationJob?.repositoryPath).toBe(
+      path.join(workspaceRoot, 'factory-crm'),
+    );
+    expect(generationJob?.featureScopeRelativePath).toBe(
+      'features/factory-crm.md',
+    );
 
     await expect(
       stat(path.join(workspaceRoot, 'factory-crm', '.git')),
@@ -180,6 +186,12 @@ describe('ProcessGenerationJobUseCase', () => {
 
     expect(generationJob?.state).toBe(GenerationJobState.FAILED);
     expect(generationJob?.outputPath).toBeNull();
+    expect(generationJob?.repositoryPath).toBe(
+      path.join(workspaceRoot, 'factory-crm'),
+    );
+    expect(generationJob?.featureScopeRelativePath).toBe(
+      'features/factory-crm.md',
+    );
     expect(generationJob?.completedAt).toEqual(expect.any(Date));
     expect(generationJob?.failureReason).toContain('already exists');
     expect(await readdir(workspaceRoot)).toEqual(['factory-crm']);
@@ -187,6 +199,7 @@ describe('ProcessGenerationJobUseCase', () => {
     expect(notificationsRepository.items[0]).toMatchObject({
       type: NotificationType.GENERATION_FAILED,
       title: 'Generation failed',
+      content: expect.stringContaining('features/factory-crm.md'),
     });
   });
 
@@ -216,6 +229,12 @@ describe('ProcessGenerationJobUseCase', () => {
     expect(generationJob?.state).toBe(GenerationJobState.SUCCEEDED);
     expect(generationJob?.outputPath).toBe(
       path.join(workspaceRoot, 'admin-api'),
+    );
+    expect(generationJob?.repositoryPath).toBe(
+      path.join(workspaceRoot, 'admin-api'),
+    );
+    expect(generationJob?.featureScopeRelativePath).toBe(
+      'features/admin-api.md',
     );
     expect(
       path.relative(workspaceRoot, generationJob?.outputPath ?? ''),
@@ -257,6 +276,12 @@ describe('ProcessGenerationJobUseCase', () => {
 
     expect(generationJob?.state).toBe(GenerationJobState.FAILED);
     expect(generationJob?.outputPath).toBeNull();
+    expect(generationJob?.repositoryPath).toBe(
+      path.join(workspaceRoot, 'factory-crm'),
+    );
+    expect(generationJob?.featureScopeRelativePath).toBe(
+      'features/factory-crm.md',
+    );
     expect(generationJob?.failureReason).toContain(
       'Codex runner is unavailable.',
     );
@@ -264,6 +289,7 @@ describe('ProcessGenerationJobUseCase', () => {
     expect(notificationsRepository.items[0]).toMatchObject({
       type: NotificationType.GENERATION_FAILED,
       title: 'Generation failed',
+      content: expect.stringContaining('features/factory-crm.md'),
     });
   });
 });

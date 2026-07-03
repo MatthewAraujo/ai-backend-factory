@@ -9,6 +9,8 @@ export function presentGenerationJob(generationJob: GenerationJob) {
     notes: generationJob.notes,
     state: generationJob.state,
     outputPath: generationJob.outputPath,
+    repositoryPath: generationJob.repositoryPath,
+    featureScopeRelativePath: generationJob.featureScopeRelativePath,
     failureReason: generationJob.failureReason,
     startedAt: generationJob.startedAt,
     completedAt: generationJob.completedAt,

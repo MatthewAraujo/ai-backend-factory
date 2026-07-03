@@ -159,6 +159,8 @@ describe('Generation jobs (e2e)', () => {
       notes: 'Include audit logging later',
       state: 'PENDING',
       outputPath: null,
+      repositoryPath: null,
+      featureScopeRelativePath: null,
       failureReason: null,
     });
   });
@@ -190,6 +192,8 @@ describe('Generation jobs (e2e)', () => {
       id: createResponse.body.generationJob.id,
       state: 'SUCCEEDED',
       outputPath: path.join(workspaceRoot, 'async-ops-api'),
+      repositoryPath: path.join(workspaceRoot, 'async-ops-api'),
+      featureScopeRelativePath: 'features/async-ops-api.md',
       failureReason: null,
     });
     await expect(
@@ -224,6 +228,8 @@ describe('Generation jobs (e2e)', () => {
       id: createResponse.body.generationJob.id,
       state: 'SUCCEEDED',
       outputPath,
+      repositoryPath: outputPath,
+      featureScopeRelativePath: 'features/platform-core-api.md',
       failureReason: null,
     });
 
@@ -310,10 +316,26 @@ describe('Generation jobs (e2e)', () => {
       id: createResponse.body.generationJob.id,
       state: 'FAILED',
       outputPath: null,
+      repositoryPath: path.join(workspaceRoot, 'runner-failure-api'),
+      featureScopeRelativePath: 'features/runner-failure-api.md',
       failureReason: expect.stringContaining(
         'Guarded Codex runner failed for features/runner-failure-api.md.',
       ),
     });
+
+    const notificationsResponse = await request(app.getHttpServer())
+      .get('/notifications')
+      .set('authorization', `Bearer ${accessToken}`);
+
+    expect(notificationsResponse.status).toBe(200);
+    expect(notificationsResponse.body.notifications).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          title: 'Generation failed',
+          content: expect.stringContaining('features/runner-failure-api.md'),
+        }),
+      ]),
+    );
   });
 
   it('lists only generation jobs owned by the authenticated user', async () => {

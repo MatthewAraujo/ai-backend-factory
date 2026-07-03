@@ -148,7 +148,7 @@ Completion signal:
 
 ## T3 — Persist and present richer generation outcomes
 
-Status: ready
+Status: done
 
 Capture enough generation metadata and failure detail to make guarded-runner failures understandable from the Generation Job API and notification flow without changing the top-level lifecycle states.
 
@@ -181,7 +181,7 @@ Completion signal:
 
 ## T4 — Expand integration and end-to-end coverage for domain-aware generation
 
-Status: planned
+Status: ready
 
 Update filesystem, use-case, and authenticated API tests so success requires generated-repository workflow files and guarded-runner completion, and failure covers Codex-orchestration errors with no template-only fallback.
 

@@ -10,12 +10,14 @@ type GenerationJobRecord = {
   completedAt: Date | null;
   createdAt: Date;
   failureReason: string | null;
+  featureScopeRelativePath: string | null;
   id: string;
   notes: string;
   outputPath: string | null;
   ownerId: string;
   projectDescription: string;
   projectName: string;
+  repositoryPath: string | null;
   startedAt: Date | null;
   state: 'PENDING' | 'RUNNING' | 'SUCCEEDED' | 'FAILED';
   updatedAt: Date;

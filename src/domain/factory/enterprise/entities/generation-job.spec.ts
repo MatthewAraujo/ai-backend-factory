@@ -25,6 +25,8 @@ describe('GenerationJob', () => {
     expect(job.notes).toBe('Include audit logging later');
     expect(job.state).toBe(GenerationJobState.PENDING);
     expect(job.outputPath).toBeNull();
+    expect(job.repositoryPath).toBeNull();
+    expect(job.featureScopeRelativePath).toBeNull();
     expect(job.failureReason).toBeNull();
     expect(job.startedAt).toBeNull();
     expect(job.completedAt).toBeNull();
@@ -42,12 +44,21 @@ describe('GenerationJob', () => {
     job.succeed(
       '/home/matthew/personal/ai-backend-factory/repos/factory-crm',
       new Date('2026-07-01T21:05:00.000Z'),
+      {
+        featureScopeRelativePath: 'features/factory-crm.md',
+        repositoryPath:
+          '/home/matthew/personal/ai-backend-factory/repos/factory-crm',
+      },
     );
 
     expect(job.state).toBe(GenerationJobState.SUCCEEDED);
     expect(job.outputPath).toBe(
       '/home/matthew/personal/ai-backend-factory/repos/factory-crm',
     );
+    expect(job.repositoryPath).toBe(
+      '/home/matthew/personal/ai-backend-factory/repos/factory-crm',
+    );
+    expect(job.featureScopeRelativePath).toBe('features/factory-crm.md');
     expect(job.failureReason).toBeNull();
     expect(job.startedAt).toEqual(new Date('2026-07-01T21:00:00.000Z'));
     expect(job.completedAt).toEqual(new Date('2026-07-01T21:05:00.000Z'));

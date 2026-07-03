@@ -81,6 +81,11 @@ describe('Prisma repositories', () => {
     newerOwnerJob.succeed(
       '/home/matthew/personal/ai-backend-factory/repos/factory-crm',
       new Date('2026-07-01T21:05:00.000Z'),
+      {
+        featureScopeRelativePath: 'features/factory-crm.md',
+        repositoryPath:
+          '/home/matthew/personal/ai-backend-factory/repos/factory-crm',
+      },
     );
 
     await repository.create(ownerJob);
@@ -96,11 +101,21 @@ describe('Prisma repositories', () => {
     expect(jobs[0]?.outputPath).toBe(
       '/home/matthew/personal/ai-backend-factory/repos/factory-crm',
     );
+    expect(jobs[0]?.repositoryPath).toBe(
+      '/home/matthew/personal/ai-backend-factory/repos/factory-crm',
+    );
+    expect(jobs[0]?.featureScopeRelativePath).toBe('features/factory-crm.md');
     expect(jobs[0]?.completedAt).toEqual(new Date('2026-07-01T21:05:00.000Z'));
     expect(jobs[1]?.outputPath).toBeNull();
     expect(prisma.__internal.generationJobs.get('job-2')?.ownerId).toBe(
       'owner-1',
     );
+    expect(prisma.__internal.generationJobs.get('job-2')?.repositoryPath).toBe(
+      '/home/matthew/personal/ai-backend-factory/repos/factory-crm',
+    );
+    expect(
+      prisma.__internal.generationJobs.get('job-2')?.featureScopeRelativePath,
+    ).toBe('features/factory-crm.md');
   });
 
   it('lists only notifications for the requested owner and persists read state', async () => {

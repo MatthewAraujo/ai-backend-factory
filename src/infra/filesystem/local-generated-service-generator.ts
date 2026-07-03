@@ -12,9 +12,11 @@ import path from 'node:path';
 import { Inject, Injectable } from '@nestjs/common';
 
 import { getGeneratedServiceTemplateManifest } from '@/domain/factory/application/generation/generated-service-template-manifest';
-import type {
-  GeneratedServiceGenerator,
-  GeneratedServiceResult,
+import {
+  GeneratedServiceGenerationError,
+  type GeneratedServiceGenerator,
+  type GeneratedServiceMetadata,
+  type GeneratedServiceResult,
 } from '@/domain/factory/application/services/generated-service-generator';
 import { GeneratedServiceWorkflowRunner } from '@/domain/factory/application/services/generated-service-workflow-runner';
 import type { GenerationJob } from '@/domain/factory/enterprise/entities/generation-job';
@@ -41,7 +43,12 @@ export class LocalGeneratedServiceGenerator
       this.workspaceRootPathProvider.getPath(),
     );
     const projectSlug = normalizeProjectSlug(params.generationJob.projectName);
+    const featureFileRelativePath = `features/${projectSlug}.md`;
     const outputPath = path.resolve(workspaceRoot, projectSlug);
+    const generationMetadata = {
+      repositoryPath: outputPath,
+      featureScopeRelativePath: featureFileRelativePath,
+    } satisfies GeneratedServiceMetadata;
     const relativeOutputPath = path.relative(workspaceRoot, outputPath);
 
     if (
@@ -49,19 +56,22 @@ export class LocalGeneratedServiceGenerator
       relativeOutputPath.startsWith('..') ||
       path.isAbsolute(relativeOutputPath)
     ) {
-      throw new Error('Generated service path escaped the workspace root.');
+      throw new GeneratedServiceGenerationError(
+        'Generated service path escaped the workspace root.',
+        generationMetadata,
+      );
     }
 
     await mkdir(workspaceRoot, { recursive: true });
 
     if (await pathExists(outputPath)) {
-      throw new Error(
+      throw new GeneratedServiceGenerationError(
         `Generated service directory already exists at ${outputPath}.`,
+        generationMetadata,
       );
     }
 
     const { templateRoot } = getGeneratedServiceTemplateManifest();
-    const featureFileRelativePath = `features/${projectSlug}.md`;
     const stagingRoot = await mkdtemp(
       path.join(workspaceRoot, `.tmp-${projectSlug}-`),
     );
@@ -83,11 +93,13 @@ export class LocalGeneratedServiceGenerator
       });
 
       return {
+        featureScopeRelativePath: featureFileRelativePath,
         outputPath,
+        repositoryPath: outputPath,
       };
     } catch (error) {
       await rm(stagingRoot, { force: true, recursive: true });
-      throw error;
+      throw toGeneratedServiceGenerationError(error, generationMetadata);
     }
   }
 }
@@ -321,4 +333,22 @@ async function pathExists(targetPath: string): Promise<boolean> {
   } catch {
     return false;
   }
+}
+
+function toGeneratedServiceGenerationError(
+  error: unknown,
+  metadata: GeneratedServiceMetadata,
+): GeneratedServiceGenerationError {
+  if (error instanceof GeneratedServiceGenerationError) {
+    return error;
+  }
+
+  if (error instanceof Error) {
+    return new GeneratedServiceGenerationError(error.message, metadata);
+  }
+
+  return new GeneratedServiceGenerationError(
+    'Generation failed unexpectedly.',
+    metadata,
+  );
 }

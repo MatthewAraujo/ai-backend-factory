@@ -40,6 +40,8 @@ model GenerationJob {
   notes              String
   state              GenerationJobState @default(PENDING)
   outputPath         String?            @map("output_path")
+  repositoryPath     String?            @map("repository_path")
+  featureScopeRelativePath String?      @map("feature_scope_relative_path")
   failureReason      String?            @map("failure_reason")
   startedAt          DateTime?          @map("started_at")
   completedAt        DateTime?          @map("completed_at")

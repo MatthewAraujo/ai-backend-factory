@@ -51,11 +51,25 @@ export class OnGenerationJobTerminalState {
       generationJobId: event.generationJob.id,
       type: NotificationType.GENERATION_FAILED,
       title: 'Generation failed',
-      content: event.generationJob.failureReason
-        ? `${event.generationJob.projectName} failed: ${event.generationJob.failureReason}`
-        : `${event.generationJob.projectName} failed.`,
+      content: renderFailureNotificationContent(event),
     });
 
     await this.notificationsRepository.create(notification);
   }
+}
+
+function renderFailureNotificationContent(
+  event: GenerationJobFailedEvent,
+): string {
+  const scopeDetail = event.generationJob.featureScopeRelativePath
+    ? ` while executing ${event.generationJob.featureScopeRelativePath}`
+    : '';
+  const failureReason = event.generationJob.failureReason
+    ? `: ${event.generationJob.failureReason}`
+    : '.';
+  const repositoryDetail = event.generationJob.repositoryPath
+    ? ` Repository: ${event.generationJob.repositoryPath}.`
+    : '';
+
+  return `${event.generationJob.projectName} failed${scopeDetail}${failureReason}${repositoryDetail}`;
 }

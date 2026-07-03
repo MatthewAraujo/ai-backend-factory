@@ -29,14 +29,21 @@ type GenerationJobProps = {
   completedAt: Date | null;
   createdAt: Date;
   failureReason: string | null;
+  featureScopeRelativePath: string | null;
   notes: string;
   outputPath: string | null;
   ownerId: UniqueEntityID;
   projectDescription: string;
   projectName: string;
+  repositoryPath: string | null;
   startedAt: Date | null;
   state: GenerationJobState;
   updatedAt: Date;
+};
+
+export type GenerationJobMetadata = {
+  featureScopeRelativePath?: string | null;
+  repositoryPath?: string | null;
 };
 
 type CreateGenerationJobProps = Optional<
@@ -44,11 +51,13 @@ type CreateGenerationJobProps = Optional<
     completedAt?: Date | null;
     createdAt?: Date;
     failureReason?: string | null;
+    featureScopeRelativePath?: string | null;
     notes: string;
     outputPath?: string | null;
     ownerId: UniqueEntityIDLike;
     projectDescription: string;
     projectName: string;
+    repositoryPath?: string | null;
     startedAt?: Date | null;
     state?: GenerationJobState;
     updatedAt?: Date;
@@ -56,7 +65,9 @@ type CreateGenerationJobProps = Optional<
   | 'completedAt'
   | 'createdAt'
   | 'failureReason'
+  | 'featureScopeRelativePath'
   | 'outputPath'
+  | 'repositoryPath'
   | 'startedAt'
   | 'state'
   | 'updatedAt'
@@ -109,6 +120,10 @@ export class GenerationJob extends AggregateRoot<GenerationJobProps> {
         state: props.state ?? GenerationJobState.PENDING,
         outputPath: props.outputPath ?? null,
         failureReason: props.failureReason ?? null,
+        repositoryPath: normalizeOptionalText(props.repositoryPath),
+        featureScopeRelativePath: normalizeOptionalText(
+          props.featureScopeRelativePath,
+        ),
         startedAt: props.startedAt ?? null,
         completedAt: props.completedAt ?? null,
         createdAt,
@@ -128,7 +143,11 @@ export class GenerationJob extends AggregateRoot<GenerationJobProps> {
     this.props.updatedAt = startedAt;
   }
 
-  succeed(outputPath: string, completedAt: Date = new Date()): void {
+  succeed(
+    outputPath: string,
+    completedAt: Date = new Date(),
+    metadata?: GenerationJobMetadata,
+  ): void {
     if (this.props.state !== GenerationJobState.RUNNING) {
       throw new InvalidGenerationJobSuccessTransitionError();
     }
@@ -142,12 +161,21 @@ export class GenerationJob extends AggregateRoot<GenerationJobProps> {
     this.props.state = GenerationJobState.SUCCEEDED;
     this.props.outputPath = normalizedOutputPath;
     this.props.failureReason = null;
+    this.props.repositoryPath =
+      normalizeOptionalText(metadata?.repositoryPath) ?? normalizedOutputPath;
+    this.props.featureScopeRelativePath = normalizeOptionalText(
+      metadata?.featureScopeRelativePath,
+    );
     this.props.completedAt = completedAt;
     this.props.updatedAt = completedAt;
     this.addDomainEvent(new GenerationJobSucceededEvent(this));
   }
 
-  fail(failureReason: string, completedAt: Date = new Date()): void {
+  fail(
+    failureReason: string,
+    completedAt: Date = new Date(),
+    metadata?: GenerationJobMetadata,
+  ): void {
     if (this.props.state !== GenerationJobState.RUNNING) {
       throw new InvalidGenerationJobFailureTransitionError();
     }
@@ -161,6 +189,10 @@ export class GenerationJob extends AggregateRoot<GenerationJobProps> {
     this.props.state = GenerationJobState.FAILED;
     this.props.failureReason = normalizedFailureReason;
     this.props.outputPath = null;
+    this.props.repositoryPath = normalizeOptionalText(metadata?.repositoryPath);
+    this.props.featureScopeRelativePath = normalizeOptionalText(
+      metadata?.featureScopeRelativePath,
+    );
     this.props.completedAt = completedAt;
     this.props.updatedAt = completedAt;
     this.addDomainEvent(new GenerationJobFailedEvent(this));
@@ -194,6 +226,14 @@ export class GenerationJob extends AggregateRoot<GenerationJobProps> {
     return this.props.failureReason;
   }
 
+  get repositoryPath(): string | null {
+    return this.props.repositoryPath;
+  }
+
+  get featureScopeRelativePath(): string | null {
+    return this.props.featureScopeRelativePath;
+  }
+
   get startedAt(): Date | null {
     return this.props.startedAt;
   }
@@ -209,4 +249,16 @@ export class GenerationJob extends AggregateRoot<GenerationJobProps> {
   get updatedAt(): Date {
     return this.props.updatedAt;
   }
+}
+
+function normalizeOptionalText(
+  value: string | null | undefined,
+): string | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  const normalizedValue = value.trim();
+
+  return normalizedValue.length > 0 ? normalizedValue : null;
 }
