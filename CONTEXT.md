@@ -40,6 +40,10 @@ _Avoid_: log entry, internal event, toast only
 The backend service produced by the Factory Service for a specific user request, including both the reusable baseline and at least one generated business-domain slice.
 _Avoid_: clone, repo, app
 
+**Continuation-Ready Generated Service**:
+A Generated Service that is not expected to be the final backend, but is strong enough for a user or a later guarded Codex run to continue safely. It includes the baseline stack, project memory, a generated PRD, an execution plan, and at least one meaningful domain slice shaped by the request.
+_Avoid_: finished product, throwaway scaffold, perfect one-shot backend
+
 **Workspace Root**:
 The fixed local directory where the Factory Service creates Generated Services in v1, under `/home/matthew/personal/ai-backend-factory/repos`.
 _Avoid_: per-request output path, arbitrary filesystem target, user-selected destination
@@ -87,3 +91,5 @@ _Avoid_: workflow control, retryable orchestration, cancellable runs
 - The Generation Request `notes` field is part of the generation contract. It must influence the generated business-domain scope instead of being stored only as metadata.
 - A successful Generation Job now requires two phases: baseline repository bootstrap by the Factory Service, then guarded Codex execution inside that repository until its selected Feature Scope File is complete.
 - The guarded Codex runner requires a clean git checkout. The Factory Service must therefore create an initial baseline commit in the Generated Service before it can invoke the runner.
+- The generation success bar should be a Continuation-Ready Generated Service, not a perfect one-shot final backend. The generated repository must be good enough to continue safely without rediscovering the product from scratch.
+- The guarded Codex loop is materially stronger when it starts from generated project memory and planning artifacts. For generated repositories, `CONTEXT.md`, `docs/PRD.md`, and `features/<slug>.md` should be created before the first guarded implementation loop begins.
