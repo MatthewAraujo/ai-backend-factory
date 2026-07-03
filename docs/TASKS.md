@@ -236,7 +236,7 @@ Completion signal:
 
 ## T4 — Implement Generation Job API Surface
 
-Status: ready
+Status: done
 
 Objective:
 Expose the authenticated REST contract for creating, listing, and fetching Generation Jobs.
