@@ -236,6 +236,8 @@ Completion signal:
 
 ## T4 — Implement Generation Job API Surface
 
+Status: ready
+
 Objective:
 Expose the authenticated REST contract for creating, listing, and fetching Generation Jobs.
 
@@ -266,6 +268,8 @@ Completion signal:
 
 ## T5 — Implement Notification Storage And Read API
 
+Status: planned
+
 Objective:
 Expose in-app notifications and mark-as-read behavior for authenticated users.
 
@@ -295,6 +299,8 @@ Completion signal:
 
 ## T6 — Author The Deterministic Generated-Service Template Pack
 
+Status: planned
+
 Objective:
 Create the local blueprint-aligned template assets and assembly rules for the Generic Foundation that the factory will generate.
 
@@ -321,6 +327,8 @@ Completion signal:
 - The repository contains a deterministic template pack and assembly rules that can be validated independently of job orchestration.
 
 ## T7 — Implement In-Process Generation Execution
+
+Status: planned
 
 Objective:
 Run Generation Jobs asynchronously inside the Factory Service, generate the local project, initialize Git, and persist terminal job outcomes.
@@ -355,6 +363,8 @@ Completion signal:
 - Newly created jobs are processed asynchronously, create local projects under the workspace root, initialize Git, persist success or failure details, and emit terminal events.
 
 ## T8 — Finalize Operational Quality Gates And Output Verification
+
+Status: planned
 
 Objective:
 Harden the repo so both the Factory Service and the generated baseline are verifiable through local and CI workflows.
