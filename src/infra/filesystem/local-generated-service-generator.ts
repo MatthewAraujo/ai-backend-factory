@@ -212,7 +212,7 @@ function renderWorkflowFile(): string {
 
 When a generated feature scope already exists, follow:
 
-\`PROJECT.md -> CONTEXT.md -> selected features/<slug>.md -> tdd\`
+\`PROJECT.md -> CONTEXT.md -> docs/PRD.md -> selected features/<slug>.md -> tdd\`
 
 Execute exactly one ready internal task per guarded run and update the selected feature scope file before stopping.
 
@@ -220,7 +220,7 @@ Execute exactly one ready internal task per guarded run and update the selected 
 
 For new features or refactors beyond the generated starting scope, follow:
 
-\`PROJECT.md -> CONTEXT.md -> grill-with-docs -> to-prd -> task-planner -> features/<slug>.md -> tdd\`
+\`PROJECT.md -> CONTEXT.md -> grill-with-docs -> to-prd -> task-planner -> docs/PRD.md -> features/<slug>.md -> tdd\`
 `;
 }
 

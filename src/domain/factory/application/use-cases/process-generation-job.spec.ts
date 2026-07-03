@@ -29,6 +29,50 @@ class StaticWorkspaceRootPathProvider implements WorkspaceRootPathProvider {
   }
 }
 
+class PlanningPackAssertingGeneratedServiceWorkflowRunner
+  implements GeneratedServiceWorkflowRunner
+{
+  observedFeatureFileRelativePath: string | null = null;
+
+  observedRepositoryPath: string | null = null;
+
+  async run(params: {
+    featureFileRelativePath: string;
+    repositoryPath: string;
+  }): Promise<void> {
+    this.observedFeatureFileRelativePath = params.featureFileRelativePath;
+    this.observedRepositoryPath = params.repositoryPath;
+
+    await Promise.all(
+      [
+        'PROJECT.md',
+        'CONTEXT.md',
+        'WORKFLOW.md',
+        'docs/PRD.md',
+        params.featureFileRelativePath,
+      ].map(async (artifactPath) => {
+        await stat(path.join(params.repositoryPath, artifactPath));
+      }),
+    );
+
+    await expect(
+      runGit(['rev-list', '--count', 'HEAD'], params.repositoryPath),
+    ).resolves.toBe('1');
+    await expect(
+      runGit(['status', '--short'], params.repositoryPath),
+    ).resolves.toBe('');
+
+    const workflowFile = await readFile(
+      path.join(params.repositoryPath, 'WORKFLOW.md'),
+      'utf8',
+    );
+
+    expect(workflowFile).toContain(
+      'PROJECT.md -> CONTEXT.md -> docs/PRD.md -> selected features/<slug>.md -> tdd',
+    );
+  }
+}
+
 describe('ProcessGenerationJobUseCase', () => {
   let workspaceRoot: string;
 
@@ -361,6 +405,40 @@ describe('ProcessGenerationJobUseCase', () => {
       title: 'Generation failed',
       content: expect.stringContaining('features/factory-crm.md'),
     });
+  });
+
+  it('creates and commits the planning pack before guarded workflow execution begins', async () => {
+    const jobsRepository = new InMemoryGenerationJobsRepository();
+    const workflowRunner =
+      new PlanningPackAssertingGeneratedServiceWorkflowRunner();
+    const generator = new LocalGeneratedServiceGenerator(
+      new StaticWorkspaceRootPathProvider(workspaceRoot),
+      new GitCliProcessRunner(),
+      workflowRunner,
+    );
+    const sut = new ProcessGenerationJobUseCase(jobsRepository, generator);
+
+    await jobsRepository.create(
+      makeGenerationJob({
+        id: 'job-1',
+        ownerId: 'owner-1',
+        projectName: 'Planning Pack API',
+        projectDescription: 'A generated service that proves planning order',
+        notes: 'ensure the planning pack exists before guarded execution',
+      }),
+    );
+
+    const result = await sut.execute({
+      generationJobId: 'job-1',
+    });
+
+    expect(result.isRight()).toBe(true);
+    expect(workflowRunner.observedRepositoryPath).toBe(
+      path.join(workspaceRoot, 'planning-pack-api'),
+    );
+    expect(workflowRunner.observedFeatureFileRelativePath).toBe(
+      'features/planning-pack-api.md',
+    );
   });
 });
 

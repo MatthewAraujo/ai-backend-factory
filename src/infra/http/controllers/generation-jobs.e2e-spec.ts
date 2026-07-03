@@ -249,7 +249,7 @@ describe('Generation jobs (e2e)', () => {
         await access(path.join(outputPath, artifactPath));
       }),
     );
-    const [contextFile, prdFile, projectFile, featureScopeFile] =
+    const [contextFile, prdFile, projectFile, featureScopeFile, workflowFile] =
       await Promise.all([
         readFile(path.join(outputPath, 'CONTEXT.md'), 'utf8'),
         readFile(path.join(outputPath, 'docs/PRD.md'), 'utf8'),
@@ -258,6 +258,7 @@ describe('Generation jobs (e2e)', () => {
           path.join(outputPath, 'features/platform-core-api.md'),
           'utf8',
         ),
+        readFile(path.join(outputPath, 'WORKFLOW.md'), 'utf8'),
       ]);
     await expect(runGit(['status', '--short'], outputPath)).resolves.toBe('');
     await expect(
@@ -285,6 +286,9 @@ describe('Generation jobs (e2e)', () => {
     expect(featureScopeFile).toContain('## T2');
     expect(featureScopeFile).toContain('## T3');
     expect(featureScopeFile).toContain('pnpm test:e2e');
+    expect(workflowFile).toContain(
+      'PROJECT.md -> CONTEXT.md -> docs/PRD.md -> selected features/<slug>.md -> tdd',
+    );
 
     const notificationsResponse = await request(app.getHttpServer())
       .get('/notifications')

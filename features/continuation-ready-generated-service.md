@@ -1,6 +1,6 @@
 # Continuation-Ready Generated Service
 
-Status: ready
+Status: done
 
 ## Summary
 
@@ -56,12 +56,12 @@ Make one Factory Generation Job produce a generated repository that already cont
 
 | Acceptance Criterion | Task(s) | Test(s) | Status |
 | --- | --- | --- | --- |
-| AC-5 Planning pack exists before guarded execution | T1, T3 | integration, e2e | in progress |
-| AC-7 Baseline includes workflow files and docs | T1, T3 | integration, e2e | in progress |
-| AC-8 Generated repo memory and PRD reflect the request | T1, T2, T3 | unit, integration, e2e | in progress |
-| AC-10 Guarded execution starts after planning-pack synthesis | T3 | unit, integration, e2e | planned |
-| AC-11 Failure still occurs for orchestration problems | T3 | unit, integration, e2e | planned |
-| AC-16 Active scopes live under `features/<slug>.md` | T2, T3 | integration | planned |
+| AC-5 Planning pack exists before guarded execution | T1, T3 | integration, e2e | done |
+| AC-7 Baseline includes workflow files and docs | T1, T3 | integration, e2e | done |
+| AC-8 Generated repo memory and PRD reflect the request | T1, T2, T3 | unit, integration, e2e | done |
+| AC-10 Guarded execution starts after planning-pack synthesis | T3 | unit, integration, e2e | done |
+| AC-11 Failure still occurs for orchestration problems | T3 | unit, integration, e2e | done |
+| AC-16 Active scopes live under `features/<slug>.md` | T2, T3 | integration | done |
 
 ## Validation
 
@@ -148,7 +148,7 @@ Completed notes:
 
 ## T3 — Reorder generation flow around the planning pack
 
-Status: ready
+Status: done
 
 Objective:
 Make planning-pack synthesis an explicit stage of generation and ensure guarded execution reads the repo in the new document order after the baseline commit exists.
@@ -180,6 +180,12 @@ Completion signal:
 
 - Generation creates the planning pack before git commit and guarded execution, and the updated tests prove the new document order and bootstrapping behavior.
 
+Completed notes:
+
+- Generated `WORKFLOW.md` now instructs guarded runs to read `PROJECT.md -> CONTEXT.md -> docs/PRD.md -> selected features/<slug>.md -> tdd`.
+- Use-case coverage now proves the guarded runner only starts after `PROJECT.md`, `CONTEXT.md`, `WORKFLOW.md`, `docs/PRD.md`, and the selected feature scope exist in a clean repository with the baseline commit already created.
+- E2E coverage now verifies the generated repository includes the updated workflow order while preserving success and failure orchestration behavior.
+
 ## Risk Plan
 
 - Generated repository docs may become verbose but still generic. Mitigation: assert request-shaped phrases and assumptions in integration tests.
@@ -198,4 +204,4 @@ No blocking open questions.
 
 ## Handoff To TDD
 
-Ready for `tdd`. T1 and T2 are complete. Start T3 next by proving guarded execution begins only after the full planning pack exists and that generated `WORKFLOW.md` enforces the new document order.
+Completed. All tasks in this scope are done.
