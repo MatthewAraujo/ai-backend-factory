@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { Account as PrismaAccount } from '@prisma/client';
 
 import type { AccountsRepository } from '@/domain/factory/application/repositories/accounts-repository';
@@ -7,6 +7,7 @@ import {
   toDomainAccount,
   toPrismaAccount,
 } from '@/infra/database/prisma/mappers/prisma-account-mapper';
+import { PrismaService } from '@/infra/database/prisma/prisma.service';
 
 type PrismaAccountsClient = {
   account: {
@@ -23,7 +24,9 @@ type PrismaAccountsClient = {
 
 @Injectable()
 export class PrismaAccountsRepository implements AccountsRepository {
-  constructor(private readonly prisma: PrismaAccountsClient) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaAccountsClient,
+  ) {}
 
   async create(account: Account): Promise<void> {
     await this.prisma.account.create({

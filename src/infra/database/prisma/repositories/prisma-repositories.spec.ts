@@ -1,4 +1,11 @@
+import { Test } from '@nestjs/testing';
+
 import { UniqueEntityID } from '@/core/entities/unique-entity-id';
+import { AccountsRepository } from '@/domain/factory/application/repositories/accounts-repository';
+import { GenerationJobsRepository } from '@/domain/factory/application/repositories/generation-jobs-repository';
+import { NotificationsRepository } from '@/domain/notification/application/repositories/notifications-repository';
+import { DatabaseModule } from '@/infra/database/database.module';
+import { PrismaService } from '@/infra/database/prisma/prisma.service';
 import { PrismaAccountsRepository } from '@/infra/database/prisma/repositories/prisma-accounts-repository';
 import { PrismaGenerationJobsRepository } from '@/infra/database/prisma/repositories/prisma-generation-jobs-repository';
 import { PrismaNotificationsRepository } from '@/infra/database/prisma/repositories/prisma-notifications-repository';
@@ -9,6 +16,26 @@ import { makeNotification } from '../../../../../test/factories/make-notificatio
 import { createFakePrismaService } from '../../../../../test/repositories/fake-prisma.service';
 
 describe('Prisma repositories', () => {
+  it('resolves Prisma-backed repositories through Nest DatabaseModule', async () => {
+    const prisma = createFakePrismaService();
+    const moduleRef = await Test.createTestingModule({
+      imports: [DatabaseModule],
+    })
+      .overrideProvider(PrismaService)
+      .useValue(prisma)
+      .compile();
+
+    expect(moduleRef.get(AccountsRepository)).toBeInstanceOf(
+      PrismaAccountsRepository,
+    );
+    expect(moduleRef.get(GenerationJobsRepository)).toBeInstanceOf(
+      PrismaGenerationJobsRepository,
+    );
+    expect(moduleRef.get(NotificationsRepository)).toBeInstanceOf(
+      PrismaNotificationsRepository,
+    );
+  });
+
   it('stores accounts and finds them by normalized email', async () => {
     const prisma = createFakePrismaService();
     const repository = new PrismaAccountsRepository(prisma);

@@ -28,7 +28,7 @@ class TestAuthController {
   imports: [AuthModule, DatabaseModule, EnvModule],
   controllers: [TestAuthController],
 })
-class TestAuthModule {}
+class TestAuthModule { }
 
 describe('Authentication (e2e)', () => {
   let app: INestApplication;

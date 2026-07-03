@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import type { GenerationJob as PrismaGenerationJob } from '@prisma/client';
 
 import { DomainEvents } from '@/core/events/domain-events';
@@ -8,6 +8,7 @@ import {
   toDomainGenerationJob,
   toPrismaGenerationJob,
 } from '@/infra/database/prisma/mappers/prisma-generation-job-mapper';
+import { PrismaService } from '@/infra/database/prisma/prisma.service';
 
 type PrismaGenerationJobsClient = {
   generationJob: {
@@ -30,7 +31,9 @@ type PrismaGenerationJobsClient = {
 export class PrismaGenerationJobsRepository
   implements GenerationJobsRepository
 {
-  constructor(private readonly prisma: PrismaGenerationJobsClient) {}
+  constructor(
+    @Inject(PrismaService) private readonly prisma: PrismaGenerationJobsClient,
+  ) {}
 
   async create(job: GenerationJob): Promise<void> {
     await this.prisma.generationJob.create({
