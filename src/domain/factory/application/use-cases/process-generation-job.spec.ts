@@ -98,11 +98,15 @@ describe('ProcessGenerationJobUseCase', () => {
       stat(path.join(workspaceRoot, 'factory-crm', 'README.md')),
     ).resolves.toBeDefined();
     await Promise.all(
-      ['AGENTS.md', 'WORKFLOW.md', 'features/factory-crm.md'].map(
-        async (artifactPath) => {
-          await stat(path.join(workspaceRoot, 'factory-crm', artifactPath));
-        },
-      ),
+      [
+        'AGENTS.md',
+        'WORKFLOW.md',
+        'PROJECT.md',
+        'CONTEXT.md',
+        'features/factory-crm.md',
+      ].map(async (artifactPath) => {
+        await stat(path.join(workspaceRoot, 'factory-crm', artifactPath));
+      }),
     );
     await expect(
       stat(
@@ -118,30 +122,44 @@ describe('ProcessGenerationJobUseCase', () => {
       path.join(workspaceRoot, 'factory-crm', '.git', 'HEAD'),
       'utf8',
     );
-    const [generatedScopeFile, featureScopeFile, gitStatus, gitCommitCount] =
-      await Promise.all([
-        readFile(
-          path.join(
-            workspaceRoot,
-            'factory-crm',
-            'src/domain/generated/enterprise/entities/generated-scope.ts',
-          ),
-          'utf8',
+    const [
+      contextFile,
+      generatedScopeFile,
+      projectFile,
+      featureScopeFile,
+      gitStatus,
+      gitCommitCount,
+    ] = await Promise.all([
+      readFile(path.join(workspaceRoot, 'factory-crm', 'CONTEXT.md'), 'utf8'),
+      readFile(
+        path.join(
+          workspaceRoot,
+          'factory-crm',
+          'src/domain/generated/enterprise/entities/generated-scope.ts',
         ),
-        readFile(
-          path.join(workspaceRoot, 'factory-crm', 'features/factory-crm.md'),
-          'utf8',
-        ),
-        runGit(['status', '--short'], path.join(workspaceRoot, 'factory-crm')),
-        runGit(
-          ['rev-list', '--count', 'HEAD'],
-          path.join(workspaceRoot, 'factory-crm'),
-        ),
-      ]);
+        'utf8',
+      ),
+      readFile(path.join(workspaceRoot, 'factory-crm', 'PROJECT.md'), 'utf8'),
+      readFile(
+        path.join(workspaceRoot, 'factory-crm', 'features/factory-crm.md'),
+        'utf8',
+      ),
+      runGit(['status', '--short'], path.join(workspaceRoot, 'factory-crm')),
+      runGit(
+        ['rev-list', '--count', 'HEAD'],
+        path.join(workspaceRoot, 'factory-crm'),
+      ),
+    ]);
 
     expect(gitHead).toContain('refs/heads/');
     expect(gitStatus).toBe('');
     expect(gitCommitCount).toBe('2');
+    expect(projectFile).toContain('# Factory CRM');
+    expect(projectFile).toContain('A deterministic CRM starter');
+    expect(projectFile).toContain('features/factory-crm.md');
+    expect(contextFile).toContain('# Factory CRM');
+    expect(contextFile).toContain('A deterministic CRM starter');
+    expect(contextFile).toContain('Include audit logging later');
     expect(generatedScopeFile).toContain('guarded-runner-completed');
     expect(featureScopeFile).toContain('Status: done');
     expect(featureScopeFile).toContain('# Factory CRM');

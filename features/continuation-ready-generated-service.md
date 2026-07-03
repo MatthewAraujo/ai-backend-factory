@@ -56,9 +56,9 @@ Make one Factory Generation Job produce a generated repository that already cont
 
 | Acceptance Criterion | Task(s) | Test(s) | Status |
 | --- | --- | --- | --- |
-| AC-5 Planning pack exists before guarded execution | T1, T3 | integration, e2e | planned |
-| AC-7 Baseline includes workflow files and docs | T1, T3 | integration, e2e | planned |
-| AC-8 Generated repo memory and PRD reflect the request | T1, T2, T3 | unit, integration, e2e | planned |
+| AC-5 Planning pack exists before guarded execution | T1, T3 | integration, e2e | in progress |
+| AC-7 Baseline includes workflow files and docs | T1, T3 | integration, e2e | in progress |
+| AC-8 Generated repo memory and PRD reflect the request | T1, T2, T3 | unit, integration, e2e | in progress |
 | AC-10 Guarded execution starts after planning-pack synthesis | T3 | unit, integration, e2e | planned |
 | AC-11 Failure still occurs for orchestration problems | T3 | unit, integration, e2e | planned |
 | AC-16 Active scopes live under `features/<slug>.md` | T2, T3 | integration | planned |
@@ -72,7 +72,7 @@ Make one Factory Generation Job produce a generated repository that already cont
 
 ## T1 — Generate request-shaped repository memory
 
-Status: ready
+Status: done
 
 Objective:
 Teach the generator to create rich generated `PROJECT.md`, `CONTEXT.md`, and `README.md` content that reflects the request and the continuation-ready contract instead of only generic repository boilerplate.
@@ -101,6 +101,11 @@ Dependencies:
 Completion signal:
 
 - A generated repo contains materially useful `PROJECT.md` and `CONTEXT.md` that are shaped by the request and support later continuation.
+
+Completed notes:
+
+- The generator now writes request-shaped `PROJECT.md`, `CONTEXT.md`, and `README.md` content for each generated repository.
+- Integration and e2e coverage now assert that generated repository memory exists and reflects `projectDescription`, `notes`, and the active feature scope path.
 
 ## T2 — Synthesize generated backend PRD and feature plan
 
@@ -187,4 +192,4 @@ No blocking open questions.
 
 ## Handoff To TDD
 
-Ready for `tdd`. Start with T1 and write the failing generated-repository memory assertions first.
+Ready for `tdd`. T1 is complete. Start T2 next by adding failing assertions for generated `docs/PRD.md` and a richer `features/<slug>.md`.

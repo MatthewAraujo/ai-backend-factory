@@ -228,6 +228,7 @@ describe('Generation jobs (e2e)', () => {
       [
         'AGENTS.md',
         '.github/workflows/ci.yml',
+        'CONTEXT.md',
         'PROJECT.md',
         'README.md',
         'WORKFLOW.md',
@@ -247,14 +248,23 @@ describe('Generation jobs (e2e)', () => {
         await access(path.join(outputPath, artifactPath));
       }),
     );
-    const featureScopeFile = await readFile(
-      path.join(outputPath, 'features/platform-core-api.md'),
-      'utf8',
-    );
+    const [contextFile, projectFile, featureScopeFile] = await Promise.all([
+      readFile(path.join(outputPath, 'CONTEXT.md'), 'utf8'),
+      readFile(path.join(outputPath, 'PROJECT.md'), 'utf8'),
+      readFile(path.join(outputPath, 'features/platform-core-api.md'), 'utf8'),
+    ]);
     await expect(runGit(['status', '--short'], outputPath)).resolves.toBe('');
     await expect(
       runGit(['rev-list', '--count', 'HEAD'], outputPath),
     ).resolves.toBe('2');
+    expect(projectFile).toContain('# Platform Core API');
+    expect(projectFile).toContain('A generated service for flow verification');
+    expect(projectFile).toContain('features/platform-core-api.md');
+    expect(contextFile).toContain('# Platform Core API');
+    expect(contextFile).toContain('A generated service for flow verification');
+    expect(contextFile).toContain(
+      'verify generated output inventory and notification flow',
+    );
     expect(featureScopeFile).toContain('Status: done');
 
     const notificationsResponse = await request(app.getHttpServer())
