@@ -268,7 +268,7 @@ Completion signal:
 
 ## T5 — Implement Notification Storage And Read API
 
-Status: planned
+Status: done
 
 Objective:
 Expose in-app notifications and mark-as-read behavior for authenticated users.
